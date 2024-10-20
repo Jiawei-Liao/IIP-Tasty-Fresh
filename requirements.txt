@@ -1,0 +1,8 @@
+torch>=2.0.0+cu118
+torchvision>=0.15.0+cu118
+ultralytics
+pillow
+pylibdmtx
+pandas
+opencv-python
+openpyxl
