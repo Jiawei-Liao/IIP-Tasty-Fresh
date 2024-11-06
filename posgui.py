@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, simpledialog, messagebox
 import cv2
 from PIL import Image, ImageTk
 import json
@@ -10,6 +10,8 @@ from datetime import datetime
 from typing import Optional, Dict, List
 import os
 import numpy as np
+import pandas as pd
+from fuzzywuzzy import process
 
 from backend import detection_backend
 
@@ -45,6 +47,114 @@ class VideoCapture:
         self._thread.join()
         self.cap.release()
 
+class SearchDialog(simpledialog.Dialog):
+    def __init__(self, parent, title, item_name, original_item, frame):
+        self.item_name = item_name
+        self.original_item = original_item
+        self.frame = frame  # Store the detection frame
+        self.product_df = pd.read_excel('product_list.xlsx')
+        self.result = None
+        super().__init__(parent, title)
+
+    def body(self, master):
+        # Create frame for image and details
+        top_frame = tk.Frame(master)
+        top_frame.grid(row=0, column=0, pady=5, sticky='nsew')
+
+        # Show the cropped image of detected item
+        if self.frame is not None:
+            try:
+                # Get bbox coordinates
+                x1, y1, x2, y2 = map(int, self.original_item['bbox'])
+                
+                # Crop the frame
+                cropped = self.frame[y1:y2, x1:x2]
+                
+                # Resize if too large (max height 150px while maintaining aspect ratio)
+                height, width = cropped.shape[:2]
+                max_height = 150
+                if height > max_height:
+                    ratio = max_height / height
+                    new_width = int(width * ratio)
+                    cropped = cv2.resize(cropped, (new_width, max_height))
+                
+                # Convert to PhotoImage
+                img = Image.fromarray(cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB))
+                photo = ImageTk.PhotoImage(img)
+                
+                # Create and pack image label
+                img_label = tk.Label(top_frame, image=photo)
+                img_label.image = photo  # Keep a reference
+                img_label.pack(side=tk.LEFT, padx=5)
+            except Exception as e:
+                print(f"Error displaying cropped image: {e}")
+
+        # Item details next to image
+        details_frame = tk.Frame(top_frame)
+        details_frame.pack(side=tk.LEFT, padx=5)
+        
+        tk.Label(
+            details_frame,
+            text=f"Detected Item: {self.item_name}\nConfidence: {self.original_item['confidence']:.2f}"
+        ).pack(anchor='w')
+
+        # Search section
+        search_frame = tk.Frame(master)
+        search_frame.grid(row=1, column=0, pady=10, sticky='nsew')
+
+        tk.Label(search_frame, text="Search for specific product:").pack(anchor='w')
+        self.search_var = tk.StringVar()
+        self.search_entry = tk.Entry(search_frame, textvariable=self.search_var, width=40)
+        self.search_entry.pack(fill=tk.X, padx=5, pady=5)
+        self.search_entry.bind('<KeyRelease>', self.on_search)
+
+        # Create listbox for results with its own frame
+        listbox_frame = tk.Frame(master)
+        listbox_frame.grid(row=2, column=0, sticky='nsew', padx=5, pady=5)
+
+        # Add scrollbar to listbox
+        scrollbar = ttk.Scrollbar(listbox_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.resultbox = tk.Listbox(
+            listbox_frame,
+            width=40,
+            height=10,
+            yscrollcommand=scrollbar.set
+        )
+        self.resultbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=self.resultbox.yview)
+        
+        self.resultbox.bind('<Double-Button-1>', self.on_select)
+
+        return self.search_entry
+
+    def on_search(self, event=None):
+        search_term = self.search_var.get().strip()
+        if search_term:
+            # Get fuzzy matches from product descriptions
+            matches = process.extract(
+                search_term,
+                self.product_df['ProductDescription'].tolist(),
+                limit=10  # Show more results
+            )
+            
+            self.resultbox.delete(0, tk.END)
+            for match, score in matches:
+                # Only show the product name, not the match score
+                self.resultbox.insert(tk.END, match)
+
+    def on_select(self, event=None):
+        if self.resultbox.curselection():
+            selection = self.resultbox.get(self.resultbox.curselection())
+            self.result = self.product_df[
+                self.product_df['ProductDescription'] == selection
+            ].iloc[0].to_dict()
+            self.ok()
+
+    def apply(self):
+        self.result = self.result if hasattr(self, 'result') else None
+
 class POSApp:
     def __init__(self, root):
         self.root = root
@@ -54,6 +164,8 @@ class POSApp:
         self.setup_cameras()
         self.start_processing()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.product_df = pd.read_excel('product_list.xlsx')
+        self.general_items = ['BURRITO', 'SANDWICH']
 
     def setup_config(self):
         self.colors = {
@@ -181,15 +293,137 @@ class POSApp:
         
         self.cart_items_frame.bind('<Configure>', lambda e: self.cart_canvas.configure(scrollregion=self.cart_canvas.bbox('all')))
         
-        # Total label
-        self.total_label = tk.Label(
+        # Checkout button instead of total label
+        self.checkout_button = tk.Button(
             self.sidebar,
-            text='Total: $0.00',
+            text='Checkout: $0.00',
             font=('Helvetica', 14, 'bold'),
-            bg=self.colors['primary'],
-            fg=self.colors['text']
+            bg=self.colors['secondary'],
+            fg=self.colors['primary'],
+            command=self.handle_checkout
         )
-        self.total_label.grid(row=2, column=0, pady=10)
+        self.checkout_button.grid(row=2, column=0, pady=10, padx=10, sticky='ew')
+
+    def needs_manual_selection(self, item):
+        """Check if an item needs manual selection based on specific conditions."""
+        item_type = item['item'].split('-')[0] if '-' in item['item'] else item['item']
+        return True
+        # Case 1: Item is a general item (BURRITO or SANDWICH) with no specific details
+        if item_type in self.general_items and not item['sandwich_item']:
+            return True
+            
+        # Case 2: Item has a data_matrix_item but doesn't match the detected item
+        if (item['data_matrix_item'] and 
+            item['data_matrix_item'] != item['item'] and 
+            item_type not in self.general_items):
+            return True
+            
+        return False
+    
+    def handle_checkout(self):
+        items_needing_selection = []
+        current_frame = None
+        
+        # Get current frame for detection visualization
+        try:
+            if not self.frame_queue.empty():
+                current_frame = self.frame_queue.get_nowait()
+            self.frame_queue.put_nowait(current_frame)  # Put it back
+        except queue.Empty:
+            pass
+        
+        with self.cart_lock:
+            for item in self.cart_items:
+                if self.needs_manual_selection(item):
+                    items_needing_selection.append(item)
+        
+        if items_needing_selection:
+            proceed = messagebox.askyesno(
+                "Manual Selection Required",
+                f"{len(items_needing_selection)} items need manual selection. Proceed?"
+            )
+            
+            if proceed:
+                for item in items_needing_selection:
+                    # Show search dialog with the detection frame
+                    dialog = SearchDialog(
+                        self.root,
+                        "Specify Item Type",
+                        item['item'],
+                        item,
+                        current_frame
+                    )
+                    if dialog.result:
+                        # Update item with specific product details
+                        with self.cart_lock:
+                            item.update(dialog.result)
+                            item['user_input'] = True
+                    else:
+                        messagebox.showwarning(
+                            "Incomplete Selection",
+                            "Checkout cancelled - not all items were specified."
+                        )
+                        return
+                
+                self.process_checkout()
+            
+        else:
+            self.process_checkout()
+
+    def process_checkout(self):
+        try:
+            total = sum(float(item.get('price', 0)) for item in self.cart_items)
+            result = messagebox.askokcancel(
+                "Confirm Checkout",
+                f"Proceed with checkout?\nTotal: ${total:.2f}"
+            )
+            
+            if result:
+                # Add your transaction logging or processing here
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                
+                # Log the transaction details if needed
+                transaction_details = {
+                    'timestamp': timestamp,
+                    'total': total,
+                    'items': self.cart_items
+                }
+                
+                messagebox.showinfo(
+                    "Checkout Complete",
+                    f"Transaction completed successfully!\nTotal: ${total:.2f}"
+                )
+                
+                # Clear cart after successful checkout
+                with self.cart_lock:
+                    self.cart_items.clear()
+            
+        except Exception as e:
+            messagebox.showerror(
+                "Checkout Error",
+                f"An error occurred during checkout: {str(e)}"
+            )
+
+    def update_cart(self):
+        with self.cart_lock:
+            # Clear existing items
+            for widget in self.cart_items_frame.winfo_children():
+                widget.destroy()
+
+            # Headers
+            self._create_cart_header()
+
+            # Items
+            total = 0
+            for item in self.cart_items:
+                price = float(item.get('price', 0))
+                total += price
+                self._create_cart_item(item['item'], price)
+
+            # Update checkout button
+            self.checkout_button.config(text=f'Checkout: ${total:.2f}')
+
+        self.root.after(500, self.update_cart)
 
     def create_status_bar(self):
         self.status_bar = tk.Label(
@@ -284,27 +518,6 @@ class POSApp:
             pass
         
         self.root.after(self.update_interval, self.update_secondary_camera)
-
-    def update_cart(self):
-        with self.cart_lock:
-            # Clear existing items
-            for widget in self.cart_items_frame.winfo_children():
-                widget.destroy()
-
-            # Headers
-            self._create_cart_header()
-
-            # Items
-            total = 0
-            for item in self.cart_items:
-                price = float(item.get('price', 0))
-                total += price
-                self._create_cart_item(item['item'], price)
-
-            # Update total
-            self.total_label.config(text=f'Total: ${total:.2f}')
-
-        self.root.after(500, self.update_cart)
 
     def _create_cart_header(self):
         header_frame = tk.Frame(self.cart_items_frame, bg=self.colors['secondary'])

@@ -55,8 +55,7 @@ class DetectionBackend:
             self.general_model(dummy_image, verbose=False)
             self.sandwich_model(dummy_image, verbose=False)
 
-    @lru_cache(maxsize=100)
-    def process_sandwich(self, image_hash: str, image: Image.Image) -> Optional[Tuple[str, float]]:
+    def process_sandwich(self, image: Image.Image) -> Optional[Tuple[str, float]]:
         """Runs sandwich classifier on an image with caching"""
         try:
             with self.model_lock:
@@ -121,13 +120,10 @@ class DetectionBackend:
                     'bbox': [x1, y1, x2, y2],
                     'price': '1'
                 }
-                
                 # Process sandwich if detected
                 if item_name == 'SANDWICH':
-                    # Create a hash for the cropped image for caching
-                    image_hash = hash(item_image.tobytes())
-                    result = self.process_sandwich(str(image_hash), item_image)
-                    
+                    result = self.process_sandwich(item_image)
+
                     if result:
                         item_info['sandwich_item'], item_info['sandwich_confidence'] = result
                         item_info['item'] = result[0]  # sandwich name
