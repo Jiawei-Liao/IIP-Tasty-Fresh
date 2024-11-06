@@ -4,7 +4,7 @@ import json
 from PIL import Image
 import time
 from datetime import datetime
-from pylibdmtx.pylibdmtx import decode
+#from pylibdmtx.pylibdmtx import decode
 import pandas as pd
 import cv2
 import torch
@@ -52,15 +52,15 @@ class DetectionBackend:
         print("Warming up models...")
         dummy_image = torch.zeros((1, 3, 640, 640)).to(self.device)
         with torch.no_grad():
-            self.general_model(dummy_image)
-            self.sandwich_model(dummy_image)
+            self.general_model(dummy_image, verbose=False)
+            self.sandwich_model(dummy_image, verbose=False)
 
     @lru_cache(maxsize=100)
     def process_sandwich(self, image_hash: str, image: Image.Image) -> Optional[Tuple[str, float]]:
         """Runs sandwich classifier on an image with caching"""
         try:
             with self.model_lock:
-                sandwich_results = self.sandwich_model(image)
+                sandwich_results = self.sandwich_model(image, verbose=False)
                 
             if sandwich_results[0].probs is not None:
                 top_class_index = sandwich_results[0].probs.top1
@@ -80,8 +80,8 @@ class DetectionBackend:
             gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
             enhanced = cv2.equalizeHist(gray)
             
-            result = decode(enhanced, max_count=1, threshold=50, min_edge=20, max_edge=60)
-            
+            #result = decode(enhanced, max_count=1, threshold=50, min_edge=20, max_edge=60)
+            result = None
             if result:
                 barcode = str(result[0]).split('\'')
                 item = self.product_list.loc[self.product_list['barcode'] == barcode, 'item'].values
@@ -96,7 +96,7 @@ class DetectionBackend:
         try:
             # Convert image to tensor once
             with self.model_lock:
-                general_results = self.general_model(image)
+                general_results = self.general_model(image, verbose=False)
 
             items = []
             for detection in general_results[0].boxes.data:
