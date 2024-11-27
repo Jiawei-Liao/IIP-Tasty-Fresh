@@ -46,7 +46,59 @@
         <button id="checkoutButton" class="checkout-btn">CHECKOUT: $0.00</button>
     </div>
 
-    <script src="scripts.js"></script>
+    <!-- Modal Customer Confirming Items -->
+    <div id="verificationModal" class="modal">
+        <div class="modal-content">
+            <!-- Title -->
+            <h2 class="modal-title">Verify Item</h2>
+            
+            <!-- Canvas -->
+            <canvas id="itemCanvas" class="item-canvas"></canvas>
+            
+            <!-- Detected Label -->
+            <p class="detected-label">Detected as: <span id="detectedItem" class="detected-item"></span></p>
+            
+            <!-- Search Container -->
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search for item...">
+                <ul id="suggestionsList" class="suggestions-list"></ul>
+            </div>
+            
+            <!-- Modal Footer with Buttons -->
+            <div class="modal-footer">
+                <button class="close-btn verification-close-btn">Cancel</button>
+                <button class="continue-btn verification-continue-btn">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="reviewCartModal" class="modal">
+        <div class="modal-content">
+            <!-- Title -->
+            <h2 class="checkout-modal-title">Review Your Cart</h2>
+            
+            <!-- Item List -->
+            <div id="cartSummary" class="cart-summary"></div>
+            <div class="cart-total">
+                Total: <span id="totalAmount">$0.00</span>
+            </div>
+            <div class="modal-footer">
+                <!-- Add IDs here -->
+                <button id="checkout-close-btn" class="close-btn">Cancel</button>
+                <button id="checkout-pay-btn" class="pay-btn">Pay</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="thankYouModal" class="modal">
+        <div class="modal-content">
+            <h2>Thank You for Your Purchase!</h2>
+            <p>Your transaction has been completed.</p>
+        </div>
+    </div>
+
+    <script type="module" src="scripts.js"></script>
 </body>
 
 </html>

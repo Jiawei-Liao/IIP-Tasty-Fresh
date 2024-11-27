@@ -8,6 +8,8 @@ from typing import Tuple, Dict, List, Optional
 import numpy as np
 from threading import Lock
 from cart_item import CartItem
+import sys
+import time
 
 class Detect:
     def __init__(self):
@@ -47,7 +49,7 @@ class Detect:
             self.general_model(dummy_image, verbose=False)
             self.sandwich_model(dummy_image, verbose=False)
 
-    def process_sandwich(self, image: Image.Image) -> Optional[List[str]]:
+    def process_sandwich(self, image: Image.Image) -> Optional[Tuple[List[str], float]]:
         """
         Runs sandwich classifier on an image
 
@@ -67,15 +69,16 @@ class Detect:
                 top5_predictions = [
                     sandwich_results[0].names[idx] for idx in top5_indices
                 ]
-                
-                return top5_predictions
+                top_confidence = sandwich_results[0].probs.top1conf.item()
+
+                return top5_predictions, top_confidence
 
         except Exception as e:
             print(f"Error processing sandwich: {e}")
         
         return None
 
-    def process_data_matrix(self, image: Image.Image) -> Optional[Tuple[str, str]]:
+    def process_data_matrix(self, image: Image.Image) -> Optional[str]:
         """
         Runs data matrix decoder on an image
 
@@ -89,13 +92,14 @@ class Detect:
             img_array = np.array(image)
             gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
             enhanced = cv2.equalizeHist(gray)
-            
             #result = decode(enhanced, max_count=1, threshold=50, min_edge=20, max_edge=60)
             result = None
             if result:
-                barcode = str(result[0]).split('\'')
-                item = self.product_list.loc[self.product_list['barcode'] == barcode, 'item'].values
-                return (item[0] if len(item) > 0 else None, barcode)
+                try:                    
+                    barcode = str(result[0]).split('\'')
+                    return barcode
+                except Exception as e:
+                    return None
                 
         except Exception as e:
             print(f"Error decoding data matrix: {e}")
@@ -129,7 +133,7 @@ class Detect:
                 top5_predictions = [
                     general_results[0].names[int(classes[idx])] for idx in sorted_indices
                 ]
-
+                
                 # Get item name from class ID
                 item_name = general_results[0].names[int(class_id)]
                 
@@ -151,37 +155,37 @@ class Detect:
                     if result:
                         # Update item info with sandwich data
                         top5_sandwiches, top_confidence = result
-                        item_info = item_info.model_copy(update={
-                            'sandwich_item': top5_sandwiches[0][0],
-                            'sandwich_confidence': top_confidence,
-                            'item': top5_sandwiches[0][0],
-                            'top5_predictions': top5_sandwiches
-                        })
+                                                
+                        item_info.sandwich_item = top5_sandwiches[0]
+                        item_info.sandwich_confidence = top_confidence
+                        item_info.top5_predictions = top5_sandwiches
 
                 # Process data matrix
-                #data_matrix_result = self.process_data_matrix(item_image)
-                data_matrix_result = None
+                data_matrix_result = self.process_data_matrix(item_image)
                 if data_matrix_result:
-                    matrix_item, matrix_code = data_matrix_result
-                    if matrix_item:
-                        # Add data matrix item to top 5 predictions
-                        current_predictions = item_info.top5_predictions
+                    item_info.data_matrix = data_matrix_result
 
-                        # If matrix_item is already in top5_predictions, move it to the front
-                        if matrix_item in current_predictions:
-                            top5_predictions = [matrix_item] + [pred for pred in current_predictions if pred != matrix_item]
-                        # Otherwise, add it to the front and remove the last item
-                        else:
-                            top5_predictions = [matrix_item] + current_predictions[:-1]
-                        
-                        # Update item info with data matrix data
-                        item_info = item_info.model_copy(update={
-                            'top5_predictions': top5_predictions,
-                            'item': matrix_item,
-                            'data_matrix_item': matrix_item,
-                            'data_matrix': matrix_code
-                        })
+                # Fill out additional item info from product list
+                product_info = pd.DataFrame()
+                if item_info.data_matrix:
+                    product_info = self.product_list.loc[self.product_list['barcode'] == item_info.data_matrix]
+                if product_info.empty and item_info.sandwich_item:
+                    product_info = self.product_list.loc[self.product_list['ProductDescription'] == item_info.sandwich_item]
+                if product_info.empty:
+                    product_info = self.product_list.loc[self.product_list['ProductDescription'] == item_name]
+                if not product_info.empty:
+                    item_info.display_name = product_info['DisplayName'].values[0]
+                    item_info.SKU = int(product_info['SKU'].values[0])
+                    item_info.barcode = int(product_info['barcode'].values[0])
+                    item_info.lookupcode = int(product_info['lookupcode'].values[0])
+                    item_info.price = float(product_info['price'].values[0])
 
+                # Replace product descriptions with display names
+                item_info.top5_predictions = [
+                    self.product_list.loc[self.product_list['ProductDescription'] == item, 'DisplayName'].values[0]
+                    if item in self.product_list['ProductDescription'].values else item
+                    for item in item_info.top5_predictions
+                ]
                 # Add processed item to list
                 items.append(item_info)
 
@@ -189,6 +193,7 @@ class Detect:
             
         except Exception as e:
             print(f"Error in detect: {e}")
+            print(f"Current file line number: {sys.exc_info()[2].tb_lineno}")
             return []
 
     def cleanup(self):
