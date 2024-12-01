@@ -5,7 +5,7 @@ from flask_cors import CORS
 import os
 
 from general_model_annotator.general_model_annotator import save_uploaded_images
-from general_model_annotator.view_annotations import get_general_annotations
+from general_model_annotator.get_annotations import get_general_annotations
 
 app = Flask(__name__)
 CORS(app)
@@ -52,8 +52,8 @@ def send_annotation_status(status):
 """Endpoint for getting annotations created by the general model"""
 @app.route('/api/get-annotations', methods=['GET'])
 def get_annotations():
-    annotations = get_general_annotations()
-    return jsonify({'status': ANNOTATION_STATUS, 'annotations': annotations}), 200
+    annotations, new_annotation_classes = get_general_annotations()
+    return jsonify({'status': ANNOTATION_STATUS, 'annotations': annotations, 'new_annotation_classes': new_annotation_classes}), 200
 
 if __name__ == '__main__':
     socketio.run(app, port=5000, debug=True)

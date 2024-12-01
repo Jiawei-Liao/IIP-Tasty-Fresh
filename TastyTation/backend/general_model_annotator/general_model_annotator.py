@@ -54,18 +54,20 @@ NEW_CLASS_ID = None
 UPLOAD_TYPE = None
 CLASS_NAME = None
 MODEL = None
+YAML_CONTENT = None
 def annotate_images(upload_type, class_name, send_annotation_status):
     send_annotation_status('STARTED')
 
     # Setup model and variables
-    global NEW_CLASS_ID, UPLOAD_TYPE, CLASS_NAME, MODEL
+    global NEW_CLASS_ID, UPLOAD_TYPE, CLASS_NAME, MODEL, YAML_CONTENT
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model_path = os.path.join(CUR_DIR, 'general_model.pt')
     MODEL = YOLO(model_path).to(device)
     NEW_CLASS_ID = len(MODEL.names)
     UPLOAD_TYPE = upload_type
     CLASS_NAME = class_name
-    '''
+    YAML_CONTENT = None
+    
     # Reset directories
     # Finished annotations
     annotation_path = os.path.join(CUR_DIR, 'annotations')
@@ -78,7 +80,7 @@ def annotate_images(upload_type, class_name, send_annotation_status):
     if os.path.exists(REMBG_CROPPED_IMG_DIR):
         shutil.rmtree(REMBG_CROPPED_IMG_DIR)
     os.makedirs(REMBG_CROPPED_IMG_DIR, exist_ok=True)
-    '''
+    
     # rembg session
     rembg_session = new_session()
 
@@ -87,17 +89,17 @@ def annotate_images(upload_type, class_name, send_annotation_status):
 
     # Only need to go through tier 1 and 2 if new data is uploaded
     if UPLOAD_TYPE == 'new':
-        #annotate(is_tier1=True, rembg_session=rembg_session, model=None, tier='tier_1')
+        annotate(is_tier1=True, rembg_session=rembg_session, tier='tier_1')
         add_dataset()
         MODEL.train(data=training_abs_path, epochs=10, patience=1, imgsz=640)
 
         # Annotate tier 2
-        annotate(is_tier1=False, rembg_session=rembg_session, model=None, tier='tier_1')
+        annotate(is_tier1=False, rembg_session=rembg_session, tier='tier_2')
         add_dataset()
         MODEL.train(data=training_abs_path, epochs=10, patience=1, imgsz=640)
 
     # Annotate tier 3
-    annotate(is_tier1=False, rembg_session=rembg_session, model=None, tier='tier_1')
+    annotate(is_tier1=False, rembg_session=rembg_session, tier='tier_3')
 
     # Cleanup
     '''shutil.rmtree(DATASET_DIR)
@@ -106,13 +108,14 @@ def annotate_images(upload_type, class_name, send_annotation_status):
 
     send_annotation_status('DONE')
 
-def annotate(is_tier1, rembg_session, model, tier):
+def annotate(is_tier1, rembg_session, tier):
     """Annotate images in tier"""
     tier_path = os.path.join(NEW_DATA_DIR, tier)
     for img_file in os.listdir(tier_path):
         if img_file.lower().endswith(('.png', '.jpg', '.jpeg')):            
             # Load image
             img_path = os.path.join(tier_path, img_file)
+
             with Image.open(img_path) as image:
                 # Convert to RGB if necessary
                 if image.mode != 'RGB':
@@ -120,32 +123,17 @@ def annotate(is_tier1, rembg_session, model, tier):
 
                 # If not tier 1, use model to get annotations for each object in image
                 if not is_tier1:
-                    annotations = annotate_model(model, image)
+                    annotations = annotate_model(MODEL, image)
                 # Otherwise, use whole image as annotation
                 else:
-                    annotations = [(NEW_CLASS_ID, image.getbbox())]
-                
-                # Tighten bounding box using remove.bg
-                for i, annotation in enumerate(annotations):
-                    class_id, bbox = annotation
-
-                    cropped_image = image.crop(bbox)
-
                     rembg_img = remove(cropped_image, session=rembg_session, alpha_matting=True, alpha_matting_background_threshold=50)
+                    bbox = rembg_img.getbbox()
+                    annotations = [(NEW_CLASS_ID, bbox)]
 
-                    new_bbox = rembg_img.getbbox()
+                    cropped_image = rembg_img.crop(bbox)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]
+                    cropped_image.save(os.path.join(REMBG_CROPPED_IMG_DIR, f'{timestamp}.png'))
 
-                    if new_bbox:
-                        adjusted_bbox = (bbox[0] + new_bbox[0], bbox[1] + new_bbox[1], bbox[0] + new_bbox[2], bbox[1] + new_bbox[3])
-
-                        annotations[i] = (annotation[0], adjusted_bbox)
-                    
-                    # If its the new class item, save rembg of the object for pasting onto other images
-                    if annotation[0] == NEW_CLASS_ID:
-                        cropped_image = rembg_img.crop(adjusted_bbox)
-                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]
-                        cropped_image.save(os.path.join(REMBG_CROPPED_IMG_DIR, f'{timestamp}.png'))
-                
                 if len(annotations) > 0:
                     # Save to dataset name
                     base_name = os.path.splitext(os.path.basename(img_file))[0]
@@ -183,16 +171,18 @@ def annotate_model(model, image):
 
 def create_dataset_yaml():
     # Create data.yaml
-    if UPLOAD_TYPE == 'new':
-        yaml_content = f"""train: ./train/images
+    global YAML_CONTENT
+    if YAML_CONTENT is None:
+        if UPLOAD_TYPE == 'new':
+            yaml_content = f"""train: ./train/images
 val: ./valid/images
 test: ./test/images
 
 nc: {NEW_CLASS_ID + 1}
 names: {list(MODEL.names.values()) + [CLASS_NAME]}
 """
-    else:
-        yaml_content = f"""train: ./train/images
+        else:
+            yaml_content = f"""train: ./train/images
 val: ./valid/images
 test: ./test/images
 
@@ -200,6 +190,9 @@ nc: {NEW_CLASS_ID}
 names: {list(MODEL.names.values())}"""
 
     with open(os.path.join(DATASET_DIR, 'data.yaml'), 'w') as f:
+        f.write(yaml_content)
+    
+    with open(os.path.join(ANNOTATIONS_DIR, 'data.yaml'), 'w') as f:
         f.write(yaml_content)
 
 def add_dataset():
@@ -220,7 +213,6 @@ def add_dataset():
     # Get cropped images
     cropped_images = glob.glob(os.path.join(REMBG_CROPPED_IMG_DIR, '*'))
 
-    
     def calculate_overlap(rect1, rect2):
         # Calculate intersection
         x_left = max(rect1[0], rect2[0])
@@ -261,49 +253,63 @@ def add_dataset():
     # Limit number of images to paste
     max_images = 500
     cur_images = 0
-    overlap_threshold = 20
+    overlap_threshold = 0
+    
+    # Temp existing images for finding a random one to paste onto
+    available_images = existing_images.copy()
     while cur_images < max_images:
         for cropped_img_path in cropped_images:
             cropped_img_base = Image.open(cropped_img_path)
 
-            # Try to find a suitable image to paste onto
-            max_attempts = 50
-            for _ in range(max_attempts):
-                # Get random base image
-                base_img_path = random.choice(existing_images)
-                base_img = Image.open(base_img_path)
+            try:
+                # Try to find a suitable image to paste onto
+                max_attempts = 100
+                for _ in range(max_attempts):
+                    # If no more available images, reset
+                    if not available_images:
+                        available_images = existing_images.copy()
+                        
+                    # Get random base image
+                    base_img_path = random.choice(available_images)
+                    available_images.remove(base_img_path)
+                    base_img = Image.open(base_img_path)
 
-                cropped_img = resize_image(cropped_img_base, base_img)
+                    cropped_img = resize_image(cropped_img_base, base_img)
 
-                base_label_filename = os.path.splitext(os.path.basename(base_img_path))[0] + '.txt'
-                base_label_path = os.path.join(DATASET_DIR, 'train', 'labels', base_label_filename)
+                    base_label_filename = os.path.splitext(os.path.basename(base_img_path))[0] + '.txt'
+                    base_label_path = os.path.join(DATASET_DIR, 'train', 'labels', base_label_filename)
 
-                existing_labels = []
-                with open(base_label_path, 'r') as f:
-                    existing_labels = [list(map(float, line.strip().split())) for line in f.readlines()]
-                
-                # Choose a random position to paste the image to
-                max_x = base_img.width - cropped_img.width
-                max_y = base_img.height - cropped_img.height
-                
-                x = random.randint(0, max_x)
-                y = random.randint(0, max_y)
+                    existing_labels = []
+                    with open(base_label_path, 'r') as f:
+                        existing_labels = [list(map(float, line.strip().split())) for line in f.readlines()]
+                    
+                    # Choose a random position to paste the image to
+                    max_x = base_img.width - cropped_img.width
+                    max_y = base_img.height - cropped_img.height
+                    
+                    x = random.randint(0, max_x)
+                    y = random.randint(0, max_y)
 
-                # Check if the cropped image overlaps with any existing labels
-                acceptable_overlap = False
-                cropped_rect = (x, y, x + cropped_img.width, y + cropped_img.height)
+                    # Check if the cropped image overlaps with any existing labels
+                    acceptable_overlap = False
+                    cropped_rect = (x, y, x + cropped_img.width, y + cropped_img.height)
 
-                for label in existing_labels:
-                    class_id, x_center, y_center, bbox_width, bbox_height = label
-                    label_x1 = int((x_center - bbox_width/2) * base_img.width)
-                    label_y1 = int((y_center - bbox_height/2) * base_img.height)
-                    label_x2 = int((x_center + bbox_width/2) * base_img.width)
-                    label_y2 = int((y_center + bbox_height/2) * base_img.height)
+                    for label in existing_labels:
+                        class_id, x_center, y_center, bbox_width, bbox_height = label
+                        label_x1 = int((x_center - bbox_width/2) * base_img.width)
+                        label_y1 = int((y_center - bbox_height/2) * base_img.height)
+                        label_x2 = int((x_center + bbox_width/2) * base_img.width)
+                        label_y2 = int((y_center + bbox_height/2) * base_img.height)
 
-                    # If overlap is less than threshold, accept
-                    if calculate_overlap(cropped_rect, (label_x1, label_y1, label_x2, label_y2)) <= overlap_threshold:
-                        acceptable_overlap = True
-                        break
+                        # If overlap is less than threshold, accept
+                        if calculate_overlap(cropped_rect, (label_x1, label_y1, label_x2, label_y2)) <= overlap_threshold:
+                            acceptable_overlap = True
+                        else:
+                            acceptable_overlap = False
+                            break
+            except Exception as e:
+                print(e)
+                print(base_img_path)
             
             # If a suitable image was found, paste the cropped image onto it and update labels
             if acceptable_overlap:
@@ -315,25 +321,33 @@ def add_dataset():
                 base_img_copy.save(base_img_path)
                 
                 # Update label file
-                with open(base_label_path, 'a') as f:
+                with open(base_label_path, 'a+') as f:
                     # Convert bbox to YOLO format
                     x_center = (x + cropped_img.width/2) / base_img.width
                     y_center = (y + cropped_img.height/2) / base_img.height
                     bbox_width = cropped_img.width / base_img.width
                     bbox_height = cropped_img.height / base_img.height
+
+                    # Ensure writing is on a new line
+                    f.seek(0, 2)
+                    f.seek(f.tell() - 1)
+                    last_char = f.read(1)
+                    if last_char != '\n':
+                        f.write('\n')
                     
                     f.write(f"{NEW_CLASS_ID} {x_center} {y_center} {bbox_width} {bbox_height}\n")
 
                     cur_images += 1
-                
-                print('Pasted image onto: ', base_img_path)
-                break
         
         overlap_threshold += 2
 
         if overlap_threshold > 50:
             print('Could not find enough suitable images to paste onto, pasted: ', cur_images)
             break
+        if cur_images >= max_images:
+            print('Pasted onto enough images')
+            break
+    
     dataset_allotter = DatasetAllocator()
     annotated = glob.glob(os.path.join(ANNOTATIONS_DIR, 'images', '*'))
     for img_path in annotated:

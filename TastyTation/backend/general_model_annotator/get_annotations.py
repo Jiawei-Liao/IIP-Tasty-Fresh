@@ -1,6 +1,7 @@
 import os
 import glob
 import os
+import yaml
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -24,10 +25,16 @@ def get_general_annotations():
                     'class_id': int(class_id),
                     'bbox': [float(x1), float(y1), float(x2), float(y2)]
                 })
-        
+
         annotations.append({
             'image_path': f'/images/general_model_annotator/annotations/images/{os.path.basename(image_file)}',
             'annotations': image_annotations
         })
     
-    return annotations
+    new_annotation_classes = {}
+    with open('./general_model_annotator/annotations/data.yaml', 'r') as file:
+        data = yaml.load(file, Loader=yaml.FullLoader)
+        for i, class_name in enumerate(data['names']):
+            new_annotation_classes[i] = class_name
+    
+    return annotations, new_annotation_classes
