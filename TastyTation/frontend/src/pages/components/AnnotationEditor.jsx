@@ -1,104 +1,52 @@
-import React from 'react'
 import { Box, Button, Typography, IconButton, Paper } from '@mui/material'
 import { ArrowBack, ArrowForward, Close } from '@mui/icons-material'
-import AnnotatedImage from './AnnotatedImage'
+import EditableAnnotatedImage from './EditableAnnotatedImage'
 
-export default function AnnotationEditor({ annotations, currentIndex, setCurrentIndex }) {
-    const currentImage = annotations[currentIndex]
-
-    const navigate = (direction) => {
+export default function AnnotationEditor({ annotations, currentIndex, setCurrentIndex, newAnnotationClasses, onAnnotationsChange }) {
+    function navigate(direction) {
         const newIndex = currentIndex + direction
         if (newIndex >= 0 && newIndex < annotations.length) {
             setCurrentIndex(newIndex)
         }
     }
 
-    if (!currentImage) return null
+    if (!annotations.length || currentIndex < 0 || currentIndex >= annotations.length) {
+        return null
+    }
+
+    const currentImage = annotations[currentIndex]
 
     return (
-        <Box
-            sx={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                bgcolor: 'rgba(0, 0, 0, 0.7)',
-                zIndex: 1200,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                p: 2,
-            }}
-        >
-            <Paper
-                sx={{
-                    maxWidth: '90%',
-                    maxHeight: '90%',
-                    width: '800px',
-                    height: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    p: 2,
-                    bgcolor: 'background.paper',
-                    borderRadius: 2,
-                    boxShadow: 3,
-                }}
-            >
-                {/* Header Section */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" noWrap>
-                        {currentImage.filename}
-                    </Typography>
-                    <IconButton onClick={() => setCurrentIndex(-1)} aria-label="Close">
-                        <Close />
-                    </IconButton>
-                </Box>
-
-                {/* Annotated Image Section */}
-                <Box
-                    sx={{
-                        flex: 1,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        bgcolor: 'background.default',
-                        p: 2,
-                    }}
-                >
-                    <AnnotatedImage
-                        item={currentImage}
-                        size="large"
-                        editable={true}
-                    />
-                </Box>
-
+        <Paper sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', p: 2, flexDirection: 'column', borderRadius: 0 }}>
+            {/* Header Section */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, position: 'relative' }}>
                 {/* Navigation Section */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                    <Button
-                        onClick={() => navigate(-1)}
-                        disabled={currentIndex === 0}
-                        startIcon={<ArrowBack />}
-                        variant="outlined"
-                    >
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 3, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+                    <Button onClick={() => navigate(-1)} disabled={currentIndex === 0} startIcon={<ArrowBack />} variant="outlined" size="large">
                         Previous
                     </Button>
-                    <Typography>
-                        Image {currentIndex + 1} of {annotations.length}
+                    <Typography variant="h6" color="text.primary">
+                        {currentIndex + 1} of {annotations.length}
                     </Typography>
-                    <Button
-                        onClick={() => navigate(1)}
-                        disabled={currentIndex === annotations.length - 1}
-                        endIcon={<ArrowForward />}
-                        variant="outlined"
-                    >
+                    <Button onClick={() => navigate(1)} disabled={currentIndex === annotations.length - 1} endIcon={<ArrowForward />} variant="outlined" size="large">
                         Next
                     </Button>
                 </Box>
-            </Paper>
-        </Box>
+
+                {/* Close Button */}
+                <IconButton onClick={() => setCurrentIndex(-1)} aria-label="Close" sx={{ position: 'absolute', right: 16 }}>
+                    <Close fontSize="large" />
+                </IconButton>
+            </Box>
+
+            {/* Annotated Image Section */}
+            <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', borderRadius: 1, p: 3, mt: 3, boxShadow: 1, overflow: 'hidden' }}>
+                <EditableAnnotatedImage
+                    item={currentImage}
+                    onAnnotationsChange={onAnnotationsChange}
+                    newAnnotationClasses={newAnnotationClasses}
+                />
+            </Box>
+        </Paper>
     )
 }

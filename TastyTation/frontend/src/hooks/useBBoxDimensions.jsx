@@ -10,10 +10,8 @@ export function useBBoxDimensions({ bbox, imageDimensions }) {
         y: 0
     })
 
-    useEffect(() => {
-        if (imageDimensions.width === 0 || imageDimensions.height === 0) return
-
-        const { width, height, offsetX, offsetY } = imageDimensions
+    function calculateStyle(bbox, imageDimensions) {
+        const { width, height } = imageDimensions
         const [x_center, y_center, boxWidthNorm, boxHeightNorm] = bbox
     
         const boxWidth = boxWidthNorm * width
@@ -21,15 +19,24 @@ export function useBBoxDimensions({ bbox, imageDimensions }) {
         const boxLeft =  (x_center * width) - (boxWidth / 2)
         const boxTop = (y_center * height) - (boxHeight / 2)
     
-        setStyle({
+        return {
             position: 'absolute',
             display: 'block',
             width: boxWidth,
             height: boxHeight,
             x: boxLeft,
             y: boxTop
-        })
+        }
+    }
+        
+    useEffect(() => {
+        if (imageDimensions.width === 0 || imageDimensions.height === 0) return
+        setStyle(calculateStyle(bbox, imageDimensions))
     }, [bbox, imageDimensions])
 
-    return [style, setStyle]
+    function updateStyle(bbox, imageDimensions) {
+        setStyle(calculateStyle(bbox, imageDimensions))
+    }
+
+    return [style, updateStyle]
 }
