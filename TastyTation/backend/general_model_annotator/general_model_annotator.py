@@ -55,18 +55,27 @@ UPLOAD_TYPE = None
 CLASS_NAME = None
 MODEL = None
 YAML_CONTENT = None
+NC = None
+NEW_CLASS = False
 def annotate_images(upload_type, class_name, send_annotation_status):
     send_annotation_status('STARTED')
 
     # Setup model and variables
-    global NEW_CLASS_ID, UPLOAD_TYPE, CLASS_NAME, MODEL, YAML_CONTENT
+    global NEW_CLASS_ID, UPLOAD_TYPE, CLASS_NAME, MODEL, YAML_CONTENT, NC, NEW_CLASS
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model_path = os.path.join(CUR_DIR, 'general_model.pt')
     MODEL = YOLO(model_path).to(device)
-    NEW_CLASS_ID = len(MODEL.names)
     UPLOAD_TYPE = upload_type
     CLASS_NAME = class_name
     YAML_CONTENT = None
+    if class_name in MODEL.names:
+        NEW_CLASS = False
+        NEW_CLASS_ID = list(MODEL.names.values()).index(class_name)
+        NC = len(MODEL.names)
+    else:
+        NEW_CLASS = True
+        NEW_CLASS_ID = len(MODEL.names)
+        NC = len(MODEL.names) + 1
     
     # Reset directories
     # Finished annotations
@@ -171,14 +180,14 @@ def annotate_model(model, image):
 
 def create_dataset_yaml():
     # Create data.yaml
-    global YAML_CONTENT
+    global YAML_CONTENT, NEW_CLASS_ID, CLASS_NAME, MODEL, NEW_CLASS
     if YAML_CONTENT is None:
-        if UPLOAD_TYPE == 'new':
+        if NEW_CLASS:
             yaml_content = f"""train: ./train/images
 val: ./valid/images
 test: ./test/images
 
-nc: {NEW_CLASS_ID + 1}
+nc: {NC}
 names: {list(MODEL.names.values()) + [CLASS_NAME]}
 """
         else:
@@ -186,7 +195,7 @@ names: {list(MODEL.names.values()) + [CLASS_NAME]}
 val: ./valid/images
 test: ./test/images
 
-nc: {NEW_CLASS_ID}
+nc: {NC}
 names: {list(MODEL.names.values())}"""
 
     with open(os.path.join(DATASET_DIR, 'data.yaml'), 'w') as f:

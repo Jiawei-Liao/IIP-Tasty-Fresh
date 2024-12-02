@@ -378,7 +378,7 @@ export default function Upload() {
                             fullWidth
                         >
                             <ToggleButton value="existing">Add To Existing Classes</ToggleButton>
-                            <ToggleButton value="new">Add New Class</ToggleButton>
+                            <ToggleButton value="new">Add New Item</ToggleButton>
                         </ToggleButtonGroup>
                     </Box>
                     {uploadType === "new" && (
@@ -387,7 +387,7 @@ export default function Upload() {
                             onChange={handleClassNameChange}
                             fullWidth
                             variant="outlined"
-                            label="New Class Name"
+                            label="Class Name"
                         />
                     )}
                 </CardContent>
