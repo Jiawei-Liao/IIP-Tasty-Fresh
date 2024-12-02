@@ -16,9 +16,29 @@ def get_image(full_path):
     path, filename = os.path.split(full_path)
     return send_from_directory(path, filename)
 
-@app.route('/api/edit-labels/<path:full_path>/labels', methods=['POST'])
-def edit_labels(full_path):
-    path, filename = os.path.split(full_path)
+@app.route('/api/edit-labels', methods=['POST'])
+def edit_labels():
+    try:
+        data = request.get_json()
+        image_path = data['image']
+        labels = data['annotations']
+
+        label_path = image_path.replace('/images/', '', 1)
+        label_path = label_path.replace('/images/', '/labels/', 1)
+        root, ext = os.path.splitext(label_path)
+        label_path = root + '.txt'
+
+        with open(label_path, 'w') as f:
+            for label in labels:
+                class_id = label['class_id']
+                bbox = label['bbox']
+                bbox = ' '.join(map(str, bbox))
+                annotation = f'{class_id} {bbox}\n'
+                f.write(annotation)
+
+        return jsonify({'message': 'Labels updated successfully!'}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
 
 """Endpoint for getting uploaded images for general model and annotates them"""
 @app.route('/api/annotate', methods=['POST'])

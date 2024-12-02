@@ -31,10 +31,10 @@ def get_general_annotations():
             'annotations': image_annotations
         })
     
-    new_annotation_classes = {}
+    new_annotation_classes = []
     with open('./general_model_annotator/annotations/data.yaml', 'r') as file:
         data = yaml.load(file, Loader=yaml.FullLoader)
         for i, class_name in enumerate(data['names']):
-            new_annotation_classes[i] = class_name
+            new_annotation_classes.append({'id': i, 'name': class_name})
     
     return annotations, new_annotation_classes

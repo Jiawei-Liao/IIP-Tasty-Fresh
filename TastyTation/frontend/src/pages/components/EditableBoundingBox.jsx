@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material'
+import { useState } from 'react'
+import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, List, ListItem, ListItemText } from '@mui/material'
 import { Rnd } from 'react-rnd'
 import { useBBoxDimensions } from '../../hooks/useBBoxDimensions'
 
@@ -7,7 +7,8 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
     const [style, updateStyle] = useBBoxDimensions({ bbox, imageDimensions })
     const [labelDialogOpen, setLabelDialogOpen] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
-    const labelInputRef = useRef(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [filteredClasses, setFilteredClasses] = useState(newAnnotationClasses)
 
     if (style.display === 'none') return null
 
@@ -47,17 +48,24 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
         setLabelDialogOpen(true)
     }
 
-    // Update data when the label is updated and close the dialog
-    function handleUpdateLabel() {
-        if (labelInputRef.current) {
-            const newLabel = labelInputRef.current.value
-            onUpdate({ 
-                class_id: newLabel, 
-                bbox 
-            })
-            setLabelDialogOpen(false)
-        }
+    // Filter the class names based on the search query
+    function handleSearchChange(event) {
+        const query = event.target.value
+        setSearchQuery(query)
+        setFilteredClasses(
+            newAnnotationClasses.filter(classItem =>
+                classItem.name.toLowerCase().includes(query.toLowerCase())
+            )
+        )
     }
+
+    // Update data when the label is selected and close the dialog
+    function handleSelectLabel(id) {
+        onUpdate({ class_id: id, bbox })
+        setLabelDialogOpen(false)
+    }
+
+    const currentClassName = newAnnotationClasses.find(item => item.id === class_id)?.name || 'unknown'
 
     return (
         <>
@@ -89,7 +97,7 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
                     lineHeight: '1.2'
                 }}
             >
-                {newAnnotationClasses[class_id] ? newAnnotationClasses[class_id] : 'unknown'}
+                {currentClassName}
                 <Box style={{ display: 'flex', marginTop: '4px' }}>
                     <Button 
                         size="small" 
@@ -125,22 +133,29 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
             />
 
             {/* Label Edit Dialog */}
-            <Dialog open={labelDialogOpen} onClose={() => setLabelDialogOpen(false)}>
+            <Dialog open={labelDialogOpen} onClose={() => setLabelDialogOpen(false)} fullWidth maxWidth='sm'>
                 <DialogTitle>Edit Label</DialogTitle>
                 <DialogContent>
+                    {/* Search Input */}
                     <TextField
-                        inputRef={labelInputRef}
+                        value={searchQuery}
+                        onChange={handleSearchChange}
                         autoFocus
                         margin="dense"
-                        label="Class Label"
-                        defaultValue={class_id}
+                        label="Search Class Label"
                         fullWidth
                         variant="standard"
                     />
+                    <List>
+                        {filteredClasses.map(({ id, name }) => (
+                            <ListItem button key={id} onClick={() => handleSelectLabel(id)}>
+                                <ListItemText primary={name} />
+                            </ListItem>
+                        ))}
+                    </List>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setLabelDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleUpdateLabel}>Update</Button>
                 </DialogActions>
             </Dialog>
         </>

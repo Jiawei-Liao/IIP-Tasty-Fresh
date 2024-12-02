@@ -8,7 +8,7 @@ import AnnotatedImage from './components/AnnotatedImage'
 function NewAnnotations() {
     const [annotations, setAnnotations] = useState([])
     const [annotationStatus, setAnnotationStatus] = useState('LOADING')
-    const [newAnnotationClasses, setNewAnnotationClasses] = useState({})
+    const [newAnnotationClasses, setNewAnnotationClasses] = useState([])
     const [currentIndex, setCurrentIndex] = useState(-1)
 
     // Fetch annotations and setup socket subscriber
@@ -53,6 +53,24 @@ function NewAnnotations() {
 
     // Update annotations when they are changed
     function onAnnotationsChange(updatedAnnotations, image) {
+        // Send updated annotations to the server
+        fetch('/api/edit-labels', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image,
+                annotations: updatedAnnotations,
+            })
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    console.error('Error updating annotations:', response.statusText)
+                    return
+                }
+            })
+        
         const updatedAnnotationsArray = annotations.map((item) => {
             // Match annotations with image
             if (item.image_path === image) {
@@ -61,6 +79,19 @@ function NewAnnotations() {
             return item
         })
     
+        const updatedNewAnnotationClasses = [...newAnnotationClasses]
+        for (const annotation of updatedAnnotations) {
+            // Find the index of the class in the current array
+            const existingIndex = updatedNewAnnotationClasses.findIndex(
+                (classItem) => classItem.id === annotation.class_id
+            )
+            if (existingIndex !== -1) {
+                const [removedClass] = updatedNewAnnotationClasses.splice(existingIndex, 1)
+                updatedNewAnnotationClasses.unshift(removedClass)
+            }
+        }
+        
+        setNewAnnotationClasses(updatedNewAnnotationClasses)
         setAnnotations(updatedAnnotationsArray)
     }
     

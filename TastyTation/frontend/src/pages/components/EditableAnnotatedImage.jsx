@@ -124,7 +124,7 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, newA
                 ...annotations,
                 {
                     bbox: normalizedBbox,
-                    class_id: 0,
+                    class_id: newAnnotationClasses[0]?.id || 0,
                 }
             ]
     
