@@ -110,10 +110,18 @@ def annotate_images(upload_type, class_name, send_annotation_status):
     # Annotate tier 3
     annotate(is_tier1=False, rembg_session=rembg_session, tier='tier_3')
 
+    create_dataset_yaml()
+    MODEL.save(os.path.join(CUR_DIR, 'tmp_general_model.pt'))
+
     # Cleanup
-    '''shutil.rmtree(DATASET_DIR)
-    shutil.rmtree(NEW_DATA_DIR)
-    shutil.rmtree(REMBG_CROPPED_IMG_DIR)'''
+    if os.path.exists(DATASET_DIR):
+        shutil.rmtree(DATASET_DIR)
+    if os.path.exists(NEW_DATA_DIR):
+        shutil.rmtree(NEW_DATA_DIR)
+    if os.path.exists(REMBG_CROPPED_IMG_DIR):
+        shutil.rmtree(REMBG_CROPPED_IMG_DIR)
+    if os.path.exists('runs'):
+        shutil.rmtree('runs')
 
     send_annotation_status('DONE')
 
@@ -198,11 +206,12 @@ test: ./test/images
 nc: {NC}
 names: {list(MODEL.names.values())}"""
 
-    with open(os.path.join(DATASET_DIR, 'data.yaml'), 'w') as f:
-        f.write(yaml_content)
-    
-    with open(os.path.join(ANNOTATIONS_DIR, 'data.yaml'), 'w') as f:
-        f.write(yaml_content)
+    if os.path.exists(DATASET_DIR):
+        with open(os.path.join(DATASET_DIR, 'data.yaml'), 'w') as f:
+            f.write(yaml_content)
+    if os.path.exists(ANNOTATIONS_DIR):
+        with open(os.path.join(ANNOTATIONS_DIR, 'data.yaml'), 'w') as f:
+            f.write(yaml_content)
 
 def add_dataset():
     """Adds random existing images to training set to avoid overfittin on new data"""

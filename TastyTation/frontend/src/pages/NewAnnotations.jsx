@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import { Box, Button, Card, CardContent, Typography } from '@mui/material'
+import React, { useEffect, useState, useRef } from 'react'
+import { Box, Button, Card, CardContent, Typography, Snackbar, Alert } from '@mui/material'
+import { useNavigate } from "react-router-dom"
 import { io } from 'socket.io-client'
 
 import AnnotationEditor from './components/AnnotationEditor'
@@ -10,19 +11,36 @@ function NewAnnotations() {
     const [annotationStatus, setAnnotationStatus] = useState('LOADING')
     const [newAnnotationClasses, setNewAnnotationClasses] = useState([])
     const [currentIndex, setCurrentIndex] = useState(-1)
+    const [error, setError] = useState('')
+    const socketRef = useRef(null)
+
+    const navigate = useNavigate()
 
     // Fetch annotations and setup socket subscriber
     useEffect(() => {
         fetchAnnotations()
 
-        const socket = io('http://localhost:5000')
-        socket.on('annotation_status', (data) => {
-            setAnnotationStatus(data.status)
-            setAnnotations(data.annotations)
-            setNewAnnotationClasses(data.new_annotation_classes)
+        socketRef.current = io('http://localhost:5000/new-annotations', {
+            transports: ['websocket'],
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000
         })
 
-        return () => socket.disconnect()
+        function handleSocketData(data) {
+            setAnnotations(data.annotations)
+            setAnnotationStatus(data.status)
+            setNewAnnotationClasses(data.new_annotation_classes)
+        }
+
+        socketRef.current.on('annotation_status', handleSocketData)
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.off('annotation_status', handleSocketData)
+                socketRef.current.disconnect()
+            }
+        }
     }, [])
 
     // Fetch annotations
@@ -94,17 +112,50 @@ function NewAnnotations() {
         setNewAnnotationClasses(updatedNewAnnotationClasses)
         setAnnotations(updatedAnnotationsArray)
     }
+
+    function addAnnotation() {
+        fetch('api/add-annotations', {
+            method: 'POST',
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    setError('Unable to add annotations')
+                    return
+                } else {
+                    navigate('/train')
+                }
+            })
+    }
     
     return (
         <>
+            {/* Error Snackbar */}
+            {error && (
+                <Snackbar
+                    open={error}
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                >
+                    <Alert severity="error" onClose={() => setError('')}>
+                        {error}
+                    </Alert>
+                </Snackbar>
+            )}
+
             {/* List of images */}
             <Box sx={{ p: 4 }}>
                 {/* Header */}
-                <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Button onClick={fetchAnnotations} variant="contained">
-                        Refresh
-                    </Button>
-                    <Typography variant="body1">Status: {annotationStatus}</Typography>
+                <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Button onClick={fetchAnnotations} variant="contained">
+                            Refresh
+                        </Button>
+                        <Typography variant="body1">Status: {annotationStatus}</Typography>
+                    </Box>
+                    {annotationStatus === 'DONE' && (
+                        <Box>
+                            <Button variant="contained" onClick={addAnnotation}>Add Annotations</Button>
+                        </Box>
+                    )}
                 </Box>
                 {/* Images */}
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 4 }}>
