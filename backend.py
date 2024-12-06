@@ -24,7 +24,7 @@ class DetectionBackend:
         # Load models
         try:
             print(f"Loading models on {self.device}...")
-            self.general_model = YOLO('general_model.pt').to(self.device)
+            self.general_model = YOLO('general_model_v3.pt').to(self.device)
             self.sandwich_model = YOLO('sandwich_classifier.pt').to(self.device)
             
             # Warmup models
@@ -80,7 +80,7 @@ class DetectionBackend:
             gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
             enhanced = cv2.equalizeHist(gray)
             
-            result = decode(enhanced, max_count=1, threshold=50, min_edge=20, max_edge=60)
+            result = decode(enhanced, max_count=1, threshold=50, min_edge=10, max_edge=60)
             
             if result:
                 barcode = str(result[0]).split('\'')

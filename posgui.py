@@ -54,14 +54,18 @@ class POSApp:
         self.detection_queue = queue.Queue(maxsize=1)
         self.frame_queue = queue.Queue(maxsize=1)
         self.cart_lock = threading.Lock()
+        self.detection_lock = threading.Lock()
         
         # Detection thread control
         self.detection_running = True
         
+        # Store the last detection results
+        self.last_detections = []
+        
         # Maintain persistent cart state
         self.cart_state = []
         self.last_detection_time = time.time()
-        self.detection_timeout = 2.0  # Time in seconds before removing items
+        self.detection_timeout = 0.5  # Time in seconds before removing items
         
         # Track displayed items to prevent unnecessary updates
         self.displayed_items = []
@@ -91,32 +95,7 @@ class POSApp:
         # Bind cleanup to window closing
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-    def _detection_worker(self):
-        """Worker thread for continuous detection processing"""
-        while self.detection_running:
-            try:
-                frame = self.frame_queue.get(timeout=1.0)
-                img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                
-                # Run detection using backend
-                items = detection_backend.detect(img)
-                
-                # Update detection results with timestamp
-                with self.cart_lock:
-                    if items:  # Only update if items were detected
-                        self.cart_state = items
-                        self.last_detection_time = time.time()
-                        
-                    if not self.detection_queue.full():
-                        self.detection_queue.put((frame, items))
-                    
-            except queue.Empty:
-                continue
-            except Exception as e:
-                print(f"Detection error: {e}")
-                self.status_bar.config(text=f"Detection error: {str(e)[:50]}...")
-                continue
-
+    
     def maintain_cart_state(self):
         """Periodically check and maintain cart state"""
         with self.cart_lock:
@@ -143,7 +122,7 @@ class POSApp:
         self.main_camera_update_duration = 33  # ~30 FPS
         self.secondary_camera_update_duration = 33
         self.main_camera_index = 0
-        self.secondary_camera_index = 6
+        self.secondary_camera_index = 1
         
         # Initialize cart
         self.cart = []
@@ -325,8 +304,13 @@ class POSApp:
                 # Update detection results
                 with self.cart_lock:
                     self.cart = items
+                    self.last_detection_time = time.time()
                     if not self.detection_queue.full():
                         self.detection_queue.put((frame, items))
+                
+                with self.detection_lock:
+                    if items:
+                        self.last_detections = items
                     
             except queue.Empty:
                 continue
@@ -336,27 +320,19 @@ class POSApp:
                 continue
 
     def update_main_camera(self):
-        """Update main camera feed and queue frames for detection"""
         try:
             frame = self.cap_main.read()
             if frame is not None:
                 frame = cv2.resize(frame, (640, 480))
-                
-                # Queue frame for detection
-                if not self.frame_queue.full():
-                    try:
-                        self.frame_queue.put_nowait(frame.copy())
-                    except queue.Full:
-                        pass
-                
-                # Use last annotated frame if available and recent
                 display_frame = frame.copy()
-                current_time = time.time()
                 
-                with self.cart_lock:
+                # Draw the latest bounding boxes onto the frame
+                current_time = time.time()
+                 
+                with self.detection_lock:
+                    #print("Time: ", current_time - self.last_detection_time)
                     if current_time - self.last_detection_time <= self.detection_timeout:
-                        # Draw detection results
-                        for item in self.cart_state:
+                        for item in self.last_detections:
                             x1, y1, x2, y2 = map(int, item['bbox'])
                             cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                             cv2.putText(
@@ -368,6 +344,17 @@ class POSApp:
                                 (0, 255, 0),
                                 2
                             )
+                            #print("Drew Box")
+                    else:
+                        # Clear detections if timeout has passed
+                        self.last_detections = []
+                
+                # Queue frame for detection
+                if not self.frame_queue.full():
+                    try:
+                        self.frame_queue.put_nowait(frame.copy())
+                    except queue.Full:
+                        pass
                 
                 # Update camera feed
                 img = Image.fromarray(cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB))
@@ -380,6 +367,7 @@ class POSApp:
             self.status_bar.config(text="Error updating main camera")
             
         self.root.after(self.main_camera_update_duration, self.update_main_camera)
+
 
     def update_secondary_camera(self):
         """Update secondary camera feed"""
