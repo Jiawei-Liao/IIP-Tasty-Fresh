@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_socketio import SocketIO, Namespace
+from flask_socketio import SocketIO
 from flask_cors import CORS
 
 import os
@@ -11,16 +11,6 @@ from general_model_annotator.add_annotations import add_annotations
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
-
-
-class NewAnnotationsNamespace(Namespace):
-    def on_connect(self):
-        print('Annotation client connected')
-        send_annotation_status_route(ANNOTATION_STATUS)
-
-    def on_disconnect(self):
-        print('Annotation client disconnected')
-socketio.on_namespace(NewAnnotationsNamespace('/new-annotations'))
 
 @app.route('/images/<path:full_path>')
 def get_image_route(full_path):
@@ -75,7 +65,6 @@ def send_annotation_status_route(status):
     ANNOTATION_STATUS = status
 
     try:
-
         if ANNOTATION_STATUS != 'DONE':
             socketio.emit('annotation_status', {'status': ANNOTATION_STATUS, 'annotations': [], 'new_annotation_classes': []})
 

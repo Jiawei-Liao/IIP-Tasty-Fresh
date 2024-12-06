@@ -20,7 +20,7 @@ function NewAnnotations() {
     useEffect(() => {
         fetchAnnotations()
 
-        socketRef.current = io('http://localhost:5000/new-annotations', {
+        socketRef.current = io('http://localhost:5000', {
             transports: ['websocket'],
             reconnection: true,
             reconnectionAttempts: 10,
@@ -142,9 +142,9 @@ function NewAnnotations() {
             )}
 
             {/* List of images */}
-            <Box sx={{ p: 4 }}>
+            <Box sx={{ p: 4, pt: 2 }}>
                 {/* Header */}
-                <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ width: "95%", maxWidth: 1200, margin: "0 auto", mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Button onClick={fetchAnnotations} variant="contained">
                             Refresh
