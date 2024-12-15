@@ -502,6 +502,7 @@ class POSApp:
         
         self.root.after(self.update_interval, self.update_main_camera)
 
+
     def update_secondary_camera(self):
         try:
             frame = self.cap_secondary.read()

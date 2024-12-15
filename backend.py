@@ -24,7 +24,7 @@ class DetectionBackend:
         # Load models
         try:
             print(f"Loading models on {self.device}...")
-            self.general_model = YOLO('general_model.pt').to(self.device)
+            self.general_model = YOLO('general_model_v3.pt').to(self.device)
             self.sandwich_model = YOLO('sandwich_classifier.pt').to(self.device)
             
             # Warmup models
