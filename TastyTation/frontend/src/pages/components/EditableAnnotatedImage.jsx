@@ -3,7 +3,7 @@ import { Box, CircularProgress } from '@mui/material'
 import EditableBoundingBox from './EditableBoundingBox'
 import { useImageDimensions } from '../../hooks/useImageDimensions'
 
-export default function EditableAnnotatedImage({ item, onAnnotationsChange, newAnnotationClasses }) {
+export default function EditableAnnotatedImage({ item, onAnnotationsChange, newAnnotationClasses, highlight, updateRemoveLabel }) {
     const imageRef = useRef(null)
     const containerRef = useRef(null)
     const [annotations, setAnnotations] = useState(item.annotations)
@@ -12,15 +12,24 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, newA
     const [newAnnotation, setNewAnnotation] = useState(null)
     const imageDimensions = useImageDimensions(imageRef, containerRef)
     const previousImagePath = useRef(null)
-    
+    const [isEditing, setIsEditing] = useState(false)
+
     // Reset annotations and loading state when item changes
     useEffect(() => {
         setAnnotations(item.annotations)
+        console.log(item.image_path)
         if (item.image_path !== previousImagePath.current) {
             setIsImageLoaded(false)
             previousImagePath.current = item.image_path
+            
+            // TODO: not sure why if resolving 0th index image results in image loading forever
+            const loadingTimer = setTimeout(() => {
+                setIsImageLoaded(true)
+            }, 100)
+            return () => clearTimeout(loadingTimer)
         }
     }, [item])
+
     // Handle image loading
     const handleImageLoad = () => {
         setIsImageLoaded(true)
@@ -36,12 +45,13 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, newA
         setAnnotations(newAnnotations)
         onAnnotationsChange(newAnnotations, item.image_path)
     }
-
+    console.log(item)
     // Delete annotation locally and send to parent component
     function handleDeleteAnnotation(indexToDelete) {
         const newAnnotations = annotations.filter((_, index) => index !== indexToDelete)
         setAnnotations(newAnnotations)
         onAnnotationsChange(newAnnotations, item.image_path)
+        updateRemoveLabel?.(item.image_path, indexToDelete)
     }
 
     // Constrain coordinates to image boundaries
@@ -161,6 +171,7 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, newA
                 src={item.image_path}
                 alt={item.filename}
                 onLoad={handleImageLoad}
+                onError={handleImageLoad}
                 style={{
                     width: '100%',
                     height: '100%',
@@ -250,6 +261,9 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, newA
                             }
                             onDelete={() => handleDeleteAnnotation(index)}
                             newAnnotationClasses={newAnnotationClasses}
+                            highlighted={highlight && item.dataset_inconsistency_index?.includes(index)}
+                            isEditing={isEditing}
+                            setIsEditing={setIsEditing}
                         />
                     ))}
                 </Box>

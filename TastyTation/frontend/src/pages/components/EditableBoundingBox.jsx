@@ -3,10 +3,9 @@ import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextFie
 import { Rnd } from 'react-rnd'
 import { useBBoxDimensions } from '../../hooks/useBBoxDimensions'
 
-export default function EditableBoundingBox({ class_id, bbox, imageDimensions, onUpdate, onDelete, newAnnotationClasses }) {
+export default function EditableBoundingBox({ class_id, bbox, imageDimensions, onUpdate, onDelete, newAnnotationClasses, highlighted, isEditing, setIsEditing }) {
     const [style, updateStyle] = useBBoxDimensions({ bbox, imageDimensions })
     const [labelDialogOpen, setLabelDialogOpen] = useState(false)
-    const [isEditing, setIsEditing] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [filteredClasses, setFilteredClasses] = useState(newAnnotationClasses)
 
@@ -75,7 +74,14 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
                 ref={(el) => {
                     if (el) {
                         const labelHeight = el.offsetHeight
-                        el.style.top = `${style.y - labelHeight - 5}px`
+                        let topPosition = style.y - labelHeight - 5
+            
+                        // Clip label to top of image if it goes off screen
+                        if (topPosition < 0) {
+                            topPosition = 10
+                        }
+            
+                        el.style.top = `${topPosition}px`
                     }
                 }}
                 style={{
@@ -128,7 +134,8 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
                 style={{
                     border: '2px solid red',
                     position: 'absolute',
-                    zIndex: 1
+                    zIndex: 1,
+                    backgroundColor: highlighted ? 'rgba(255, 0, 0, 0.5)' : 'transparent'
                 }}
             />
 
