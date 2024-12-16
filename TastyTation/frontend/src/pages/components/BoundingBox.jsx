@@ -1,7 +1,16 @@
 import { Box } from '@mui/material'
 import { useBBoxDimensions } from '../../hooks/useBBoxDimensions'
 
+/**
+ * @see EditableBoundingBox for editable version
+ * @param {[Float]} bbox: Array of 4 values, representing x_center, y_center, width and height of a bounding box (YOLO format)
+ * @param {{width: Int, height: Int, offsetX: Int, offsetY: Int, imageAspectRatio: Float}} imageDimensions: An object representing the dimensions of an image
+ * @param {String} className: Class name of the annotation, optional
+ * @param {Boolean} highlighted: Whether to highlight the box or not, optional
+ * @returns {JSX.Element} Box representing a annotation, with optional label for class name and highlighted box
+ */
 export default function BoundingBox({ bbox, imageDimensions, className, highlighted }) {
+    // Get style of bounding box
     const [style] = useBBoxDimensions({ bbox, imageDimensions })
 
     return (

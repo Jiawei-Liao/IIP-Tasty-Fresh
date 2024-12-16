@@ -3,21 +3,38 @@ import { Box, CircularProgress } from '@mui/material'
 import EditableBoundingBox from './EditableBoundingBox'
 import { useImageDimensions } from '../../hooks/useImageDimensions'
 
-export default function EditableAnnotatedImage({ item, onAnnotationsChange, newAnnotationClasses, highlight, updateRemoveLabel }) {
+/**
+ * Used by AnnotationEditor and VerificationAnnotationEditor to edit the annotations of an image.
+ * @param {{annotations: [{bbox: [float], class_id: Int}], image_path: String}} item: Object of annotation data for an image when called by NewAnnotations
+ * @param {function} onAnnotationsChange: Callback function to update backend when any annotations changes
+ * @param {[{id: Int, name: String}]} annotationCLasses: Array of annotation class id and name objects, optional
+ * @param {Boolean} highlight: Whether to highlight labels based on inconsistency, optional
+ * @param {function} updateRemoveLabel: Callback function when a label is removed, to update inconsistency indexes, optional 
+ * @returns {JSX.Element} An image with editable annotations, which on change, 
+ */
+export default function EditableAnnotatedImage({ item, onAnnotationsChange, annotationClasses, highlight, updateRemoveLabel }) {
+    // Set annotations to this item's annotations
+    const [annotations, setAnnotations] = useState(item.annotations)
+
+    // Image variables
     const imageRef = useRef(null)
     const containerRef = useRef(null)
-    const [annotations, setAnnotations] = useState(item.annotations)
+    const imageDimensions = useImageDimensions(imageRef, containerRef)
+
+    // Avoid breaks between changing images
     const [isImageLoaded, setIsImageLoaded] = useState(false)
+    const previousImagePath = useRef(null)
+
+    // Creating new annotations
     const [isDrawing, setIsDrawing] = useState(false)
     const [newAnnotation, setNewAnnotation] = useState(null)
-    const imageDimensions = useImageDimensions(imageRef, containerRef)
-    const previousImagePath = useRef(null)
+
+    // Hide labels when editing
     const [isEditing, setIsEditing] = useState(false)
 
     // Reset annotations and loading state when item changes
     useEffect(() => {
         setAnnotations(item.annotations)
-        console.log(item.image_path)
         if (item.image_path !== previousImagePath.current) {
             setIsImageLoaded(false)
             previousImagePath.current = item.image_path
@@ -31,7 +48,7 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, newA
     }, [item])
 
     // Handle image loading
-    const handleImageLoad = () => {
+    function handleImageLoad() {
         setIsImageLoaded(true)
     }
 
@@ -45,7 +62,7 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, newA
         setAnnotations(newAnnotations)
         onAnnotationsChange(newAnnotations, item.image_path)
     }
-    console.log(item)
+
     // Delete annotation locally and send to parent component
     function handleDeleteAnnotation(indexToDelete) {
         const newAnnotations = annotations.filter((_, index) => index !== indexToDelete)
@@ -134,7 +151,7 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, newA
                 ...annotations,
                 {
                     bbox: normalizedBbox,
-                    class_id: newAnnotationClasses[0]?.id || 0,
+                    class_id: annotationClasses[0]?.id || 0,
                 }
             ]
     
@@ -260,7 +277,7 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, newA
                                 handleUpdateAnnotation(index, updatedAnnotation)
                             }
                             onDelete={() => handleDeleteAnnotation(index)}
-                            newAnnotationClasses={newAnnotationClasses}
+                            annotationClasses={annotationClasses}
                             highlighted={highlight && item.dataset_inconsistency_index?.includes(index)}
                             isEditing={isEditing}
                             setIsEditing={setIsEditing}

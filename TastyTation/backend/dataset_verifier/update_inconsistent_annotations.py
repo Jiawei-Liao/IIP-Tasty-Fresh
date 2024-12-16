@@ -17,7 +17,6 @@ def resolve_inconsistency(image_path):
         json.dump(inconsistent_annotations, f, indent=4)
 
 def update_inconsistent_label(image_path, label_index):
-    return
     # Load inconsistent annotations
     with open(JSON_PATH, 'r') as f:
         inconsistent_annotations = json.load(f)

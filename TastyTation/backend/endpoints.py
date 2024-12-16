@@ -27,8 +27,6 @@ def get_image_route(full_path):
 # Edit labels for an image
 @app.route('/api/edit-labels', methods=['POST'])
 def edit_labels_route():
-    return jsonify({'message': 'Labels updated successfully!'}), 200
-
     try:
         data = request.get_json()
         image_path = data['image']

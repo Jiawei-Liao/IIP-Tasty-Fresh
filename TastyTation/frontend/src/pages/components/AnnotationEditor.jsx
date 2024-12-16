@@ -2,19 +2,31 @@ import { Box, Button, Typography, IconButton, Paper } from '@mui/material'
 import { ArrowBack, ArrowForward, Close } from '@mui/icons-material'
 import EditableAnnotatedImage from './EditableAnnotatedImage'
 
-export default function AnnotationEditor({ annotations, currentIndex, setCurrentIndex, newAnnotationClasses, onAnnotationsChange }) {
+/**
+ * Annotation editor for NewAnnotations.
+ * @see VerificationAnnotationEditor.jsx for another version of AnnotationEditor for Verify
+ * @param {[{annotations: [{bbox: [float], class_id: Int}], image_path: String}]} annotations: An array of annotation data objects
+ * @param {Int} currentIndex: Current index of the image being annotated from annotations variable
+ * @param {React.Dispatch<Int>} setCurrentIndex: Set new index for current annotation index, used to go to previous or next image
+ * @param {[{id: Int, name: String}]} annotationCLasses: Array of annotation class id and name objects, optional
+ * @param {function} onAnnotationsChange: Callback function to update backend when any annotations changes
+ * @returns {JSX.Element} An editable annotated image with navigation functionality
+ */
+export default function AnnotationEditor({ annotations, currentIndex, setCurrentIndex, annotationClasses, onAnnotationsChange }) {
+    // Return null if invalid
+    if (!annotations.length || currentIndex < 0 || currentIndex >= annotations.length) {
+        return null
+    }
+
+    const currentImage = annotations[currentIndex]
+
+    // Navigation function to go to previous or next image
     function navigate(direction) {
         const newIndex = currentIndex + direction
         if (newIndex >= 0 && newIndex < annotations.length) {
             setCurrentIndex(newIndex)
         }
     }
-
-    if (!annotations.length || currentIndex < 0 || currentIndex >= annotations.length) {
-        return null
-    }
-
-    const currentImage = annotations[currentIndex]
 
     return (
         <Paper sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', p: 2, flexDirection: 'column', borderRadius: 0 }}>
@@ -44,7 +56,7 @@ export default function AnnotationEditor({ annotations, currentIndex, setCurrent
                 <EditableAnnotatedImage
                     item={currentImage}
                     onAnnotationsChange={onAnnotationsChange}
-                    newAnnotationClasses={newAnnotationClasses}
+                    annotationClasses={annotationClasses}
                 />
             </Box>
         </Paper>

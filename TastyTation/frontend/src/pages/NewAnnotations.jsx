@@ -180,7 +180,7 @@ function NewAnnotations() {
                     annotations={annotations}
                     currentIndex={currentIndex}
                     setCurrentIndex={setCurrentIndex}
-                    newAnnotationClasses={newAnnotationClasses}
+                    annotationClasses={newAnnotationClasses}
                     onAnnotationsChange={onAnnotationsChange}
                 />
             )}
