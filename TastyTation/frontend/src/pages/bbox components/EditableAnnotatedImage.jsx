@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Box, CircularProgress } from '@mui/material'
 import EditableBoundingBox from './EditableBoundingBox'
 import { useImageDimensions } from '../../hooks/useImageDimensions'

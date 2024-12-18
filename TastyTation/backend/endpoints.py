@@ -14,6 +14,8 @@ from dataset_verifier.update_inconsistent_annotations import resolve_inconsisten
 from dataset_verifier.update_inconsistent_annotations import update_inconsistent_label
 
 from classifiers.segment_images import segment_images
+from classifiers.create_classifier import create_classifier
+from classifiers.get_classifiers import get_classifiers
 
 app = Flask(__name__)
 CORS(app)
@@ -159,6 +161,7 @@ def update_inconsistent_label_route():
     return jsonify({'message': 'Inconsistent label updated successfully!'}), 200
 
 ''' Endpoints for classifiers page '''
+# Segment objects within images
 @app.route('/api/segment-images', methods=['POST'])
 def segment_images_route():
     images = request.files.getlist('images')
@@ -173,6 +176,23 @@ def segment_images_route():
         )
     except Exception as e:
         return jsonify({'message': str(e)}), 500
+
+# Create new classifier
+@app.route('/api/create-classifier', methods=['POST'])
+def create_classifier_route():
+    classifier_name = request.form.get('classifier_name')
+
+    try:
+        create_classifier(classifier_name)
+        return jsonify({'message': 'Classifier created successfully!'}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+# Get list of classifiers
+@app.route('/api/get-classifiers', methods=['GET'])
+def get_classifiers_route():
+    classifiers = get_classifiers()
+    return jsonify({'classifiers': classifiers}), 200
 
 if __name__ == '__main__':
     socketio.run(app, port=5000, debug=True)

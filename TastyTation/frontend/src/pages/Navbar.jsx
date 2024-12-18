@@ -16,7 +16,7 @@ function NavButton({ label, isActive, to }) {
     }
 
     return (
-        <IconButton sx={{ borderRadius: 0 }} color="inherit" component="a" href={to} onClick={handleClick} style={{ textDecoration: 'none' }}>
+        <IconButton sx={{ borderRadius: 0 }} color='inherit' component='a' href={to} onClick={handleClick} style={{ textDecoration: 'none' }}>
             <Typography sx={{ borderBottom: isActive ? '2px solid white' : 'none', paddingBottom: isActive ? '4px' : '0'}}>
                 {label}
             </Typography>
@@ -33,19 +33,19 @@ export default function Navbar() {
 
     return (
         <Box sx={{ mb: 3 }}>
-            <AppBar position="static">
+            <AppBar position='static'>
                 <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', gap: 2, pl: 2 }}>
-                        <Typography variant="h6">
+                        <Typography variant='h6'>
                             TastyTation
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 2, pr: 2 }}>
-                        <NavButton label="Upload Data" isActive={isActive('/upload')} to='/upload' />
-                        <NavButton label="New Annotations" isActive={isActive('/new-annotations')} to='/new-annotations' />
-                        <NavButton label="Classifiers" isActive={isActive('/classifiers')} to='/classifiers' />
-                        <NavButton label="Verify Dataset" isActive={isActive('/verify')} to='/verify' />
-                        <NavButton label="Train" isActive={isActive('/train')} to='/train' />
+                        <NavButton label='Upload Data' isActive={isActive('/upload')} to='/upload' />
+                        <NavButton label='New Annotations' isActive={isActive('/new-annotations')} to='/new-annotations' />
+                        <NavButton label='Classifiers' isActive={isActive('/classifiers')} to='/classifiers' />
+                        <NavButton label='Verify Dataset' isActive={isActive('/verify')} to='/verify' />
+                        <NavButton label='Train' isActive={isActive('/train')} to='/train' />
                     </Box>
                 </Toolbar>
             </AppBar>

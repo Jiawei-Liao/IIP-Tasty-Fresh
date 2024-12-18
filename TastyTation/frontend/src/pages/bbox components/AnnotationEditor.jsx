@@ -34,20 +34,20 @@ export default function AnnotationEditor({ annotations, currentIndex, setCurrent
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, position: 'relative' }}>
                 {/* Navigation Section */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 3, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
-                    <Button onClick={() => navigate(-1)} disabled={currentIndex === 0} startIcon={<ArrowBack />} variant="outlined" size="large">
+                    <Button onClick={() => navigate(-1)} disabled={currentIndex === 0} startIcon={<ArrowBack />} variant='outlined' size='large'>
                         Previous
                     </Button>
-                    <Typography variant="h6" color="text.primary">
+                    <Typography variant='h6' color='text.primary'>
                         {currentIndex + 1} of {annotations.length}
                     </Typography>
-                    <Button onClick={() => navigate(1)} disabled={currentIndex === annotations.length - 1} endIcon={<ArrowForward />} variant="outlined" size="large">
+                    <Button onClick={() => navigate(1)} disabled={currentIndex === annotations.length - 1} endIcon={<ArrowForward />} variant='outlined' size='large'>
                         Next
                     </Button>
                 </Box>
 
                 {/* Close Button */}
-                <IconButton onClick={() => setCurrentIndex(-1)} aria-label="Close" sx={{ position: 'absolute', right: 16 }}>
-                    <Close fontSize="large" />
+                <IconButton onClick={() => setCurrentIndex(-1)} aria-label='Close' sx={{ position: 'absolute', right: 16 }}>
+                    <Close fontSize='large' />
                 </IconButton>
             </Box>
 

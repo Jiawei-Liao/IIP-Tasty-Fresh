@@ -1,11 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Box, Typography, Button, ImageList, ImageListItem, Card, CardContent, CircularProgress, IconButton, Snackbar, Alert } from '@mui/material'
-import {
-    Delete as DeleteIcon,
-    CloudUpload as CloudUploadIcon,
-    FileUpload as FileUploadIcon,
-    Start as StartIcon
-} from "@mui/icons-material"
+import { Delete, CloudUpload, Start } from '@mui/icons-material'
+import ErrorInfoSnackbar from '../components/ErrorInfoSnackbar'
 
 export default function SegmentObjects() {
     // Store uploaded images
@@ -30,7 +26,7 @@ export default function SegmentObjects() {
     
             const processFile = async (file) => {
                 return new Promise((resolve) => {
-                    if (file.type.startsWith("image/")) {
+                    if (file.type.startsWith('image/')) {
                         const reader = new FileReader()
                         reader.onload = (e) => {
                             setImages((prevImages) => {
@@ -45,7 +41,7 @@ export default function SegmentObjects() {
                             resolve()
                         }
                         reader.readAsDataURL(file)
-                    } else if (file.type === "video/mp4") {
+                    } else if (file.type === 'video/mp4') {
                         extractFrames(file).then(resolve)
                     }
                 })
@@ -53,25 +49,25 @@ export default function SegmentObjects() {
     
             await Promise.all(files.map(processFile))
         } catch (error) {
-            console.error("Upload error:", error)
+            setError(error.message)
         } finally {
             setLoading(false)
-            event.target.value = ""
+            event.target.value = ''
         }
     }, [])
         
     function extractFrames(file) {
         return new Promise((resolve, reject) => {
             // Create video element
-            const video = document.createElement("video")
+            const video = document.createElement('video')
             video.src = URL.createObjectURL(file)
-            video.crossOrigin = "anonymous"
+            video.crossOrigin = 'anonymous'
             
             // Create canvas element for frame capture
-            const canvas = document.createElement("canvas")
-            const ctx = canvas.getContext("2d")
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
     
-            video.addEventListener("loadedmetadata", () => {
+            video.addEventListener('loadedmetadata', () => {
                 const duration = Math.floor(video.duration)
                 let currentSecond = 0
                 const processedFrames = []
@@ -96,11 +92,11 @@ export default function SegmentObjects() {
     
                             canvas.toBlob((blob) => {
                                 if (!blob) {
-                                    console.warn(`Could not create blob for second ${currentSecond}`);
-                                    currentSecond += captureRate;
-                                    captureNextFrame();
-                                    frameResolve();
-                                    return;
+                                    console.warn(`Could not create blob for second ${currentSecond}`)
+                                    currentSecond += captureRate
+                                    captureNextFrame()
+                                    frameResolve()
+                                    return
                                 }
     
                                 // Pad the seconds to ensure consistent naming
@@ -108,7 +104,7 @@ export default function SegmentObjects() {
                                 const frameFile = new File(
                                     [blob], 
                                     `${file.name}-frame-${paddedSecond}.png`, 
-                                    { type: "image/png" }
+                                    { type: 'image/png' }
                                 )
     
                                 const reader = new FileReader()
@@ -126,19 +122,19 @@ export default function SegmentObjects() {
                                     })
     
                                     // Track processed frames if needed
-                                    processedFrames.push(frameFile);
+                                    processedFrames.push(frameFile)
     
                                     // Move to next frame
-                                    currentSecond += captureRate;
-                                    captureNextFrame();
-                                    frameResolve();
+                                    currentSecond += captureRate
+                                    captureNextFrame()
+                                    frameResolve()
                                 }
     
                                 reader.onerror = (error) => {
-                                    console.error('Error reading frame', error);
-                                    currentSecond += captureRate;
-                                    captureNextFrame();
-                                    frameResolve();
+                                    console.warn('Error reading frame', error)
+                                    currentSecond += captureRate
+                                    captureNextFrame()
+                                    frameResolve()
                                 }
     
                                 reader.readAsDataURL(frameFile)
@@ -152,7 +148,7 @@ export default function SegmentObjects() {
             })
 
             video.onerror = (error) => {
-                console.error('Video processing error', error)
+                console.warn('Video processing error', error)
                 reject(error)
             }
         })
@@ -171,11 +167,9 @@ export default function SegmentObjects() {
         // Start auto annotation process, uploading images
         setError(null)
         setSegmenting(true)
-        console.log(images)
         // Validate upload
         if (images.size === 0) {
-            console.log('no images')
-            setError("No images uploaded")
+            setError('No images uploaded')
             setSegmenting(false)
             return
         }
@@ -183,7 +177,7 @@ export default function SegmentObjects() {
         // Prepare data for upload
         const formData = new FormData()
         Array.from(images.values()).forEach((image) => {
-            formData.append("images", image.file, image.name)
+            formData.append('images', image.file, image.name)
         })
 
         // Send data to backend
@@ -207,7 +201,6 @@ export default function SegmentObjects() {
                 window.URL.revokeObjectURL(url)
             })
             .catch((error) => {
-                console.error(error)
                 setSegmenting(false)
                 setError('Segmentation failed')
             })
@@ -220,59 +213,38 @@ export default function SegmentObjects() {
     return (
         <>
             {/* Error Snackbar */}
-            {error && (
-                <Snackbar
-                    open={Boolean(error)}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                >
-                    <Alert severity="error" onClose={() => setError('')}>
-                        {error}
-                    </Alert>
-                </Snackbar>
-            )}
-            {/* Verifying Status Snackbar */}
-            {segmenting && !error && (
-                <Snackbar
-                    open={segmenting}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                >
-                    <Alert severity="info">
-                        Segmenting Objects...
-                        <br />
-                        Please Do Not Close This Page
-                    </Alert>
-                </Snackbar>
-            )}
-            {/* Main Content */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Typography variant="h4">Segment Objects</Typography>
+            <ErrorInfoSnackbar error={error} setError={setError} info={segmenting} infoMessage={<>Segmenting Objects...<br />Please Do Not Close This Page</>} />
 
-                <Typography variant="caption" style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>Upload images or videos to segment for individual classifier datasets</Typography>
+            {/* Main Content */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant='h4'>Segment Objects</Typography>
+
+                <Typography variant='caption' style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>Upload images or videos to segment for individual classifier datasets</Typography>
 
                 <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
                     <Box>
                         <input
-                            accept="image/*,video/mp4"
-                            style={{ display: "none" }}
-                            id="image-upload-button"
+                            accept='image/*,video/mp4'
+                            style={{ display: 'none' }}
+                            id='image-upload-button'
                             multiple
-                            type="file"
+                            type='file'
                             onChange={(e) => handleImageUpload(e)}
                             disabled={loading}
                         />
-                        <label htmlFor="image-upload-button">
+                        <label htmlFor='image-upload-button'>
                             <Button
-                                variant="contained"
-                                component="span"
-                                startIcon={<CloudUploadIcon />}
+                                variant='contained'
+                                component='span'
+                                startIcon={<CloudUpload />}
                                 disabled={segmenting || loading}
-                                sx={{ width: "200px" }}
+                                sx={{ width: '200px' }}
                             >
                                 Upload Images
                             </Button>
                         </label>
                     </Box>
-                    <Button variant="contained" onClick={segmentObjects} disabled={segmenting || loading}>Segment Objects</Button>
+                    <Button variant='contained' onClick={segmentObjects} endIcon={<Start />} disabled={segmenting || loading}>Segment Objects</Button>
                 </Box>
                 
                 {/* Uploaded Images */}
@@ -280,51 +252,51 @@ export default function SegmentObjects() {
                     <CardContent>
                         {/* Loading Spinner */}
                         {loading && (
-                            <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
                                 <CircularProgress />
                             </Box>
                         )}
 
                         {/* Image List */}
                         {images.size > 0 ? (
-                            <ImageList sx={{ width: "100%" }} cols={3} rowHeight={300}>
+                            <ImageList sx={{ width: '100%' }} cols={3} rowHeight={300}>
                                 {Array.from(images.values()).map((image) => (
                                     <ImageListItem
                                         key={image.name}
                                         sx={{
-                                            position: "relative",
-                                            border: "1px solid #eee",
+                                            position: 'relative',
+                                            border: '1px solid #eee',
                                             borderRadius: 1,
-                                            overflow: "hidden",
+                                            overflow: 'hidden',
                                         }}
                                     >
                                         {/* Image */}
                                         <img
                                             src={image.src}
                                             alt={image.name}
-                                            loading="lazy"
-                                            style={{ height: "240px", objectFit: "cover" }}
+                                            loading='lazy'
+                                            style={{ height: '240px', objectFit: 'cover' }}
                                         />
                                         {/* Delete button */}
                                         <IconButton
                                             sx={{
-                                                position: "absolute",
+                                                position: 'absolute',
                                                 top: 5,
                                                 right: 5,
-                                                backgroundColor: "rgba(255, 255, 255, 0.7)",
-                                                "&:hover": {
-                                                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                                                backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
                                                 },
                                             }}
                                             onClick={() => handleDeleteImage(image.name)}
                                         >
-                                            <DeleteIcon />
+                                            <Delete />
                                         </IconButton>
                                     </ImageListItem>
                                 ))}
                             </ImageList>
                         ) : (
-                            <Typography variant="body1" color="text.secondary" align="center">
+                            <Typography variant='body1' color='text.secondary' align='center'>
                                 No Images Uploaded
                             </Typography>
                         )}

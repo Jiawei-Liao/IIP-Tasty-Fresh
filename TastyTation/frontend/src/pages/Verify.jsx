@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Box, Button, Typography, Card, CardContent, Alert, Snackbar } from '@mui/material'
+import { Box, Button, Typography, Card, CardContent } from '@mui/material'
 import { io } from 'socket.io-client'
 
+import ErrorInfoSnackbar from './components/ErrorInfoSnackbar'
 import VerificationAnnotationEditor from './bbox components/VerificationAnnotationEditor'
 import AnnotatedImage from './bbox components/AnnotatedImage'
 
@@ -56,7 +57,7 @@ export default function Verify() {
                 setVerifying(false)
             }
         } catch (error) {
-            console.error('Error fetching annotations:', error)
+            setError(error.message)
         }
     }
 
@@ -88,9 +89,12 @@ export default function Verify() {
         })
             .then((response) => {
                 if (!response.ok) {
-                    console.error('Error updating annotations:', response.statusText)
-                    return
+                    throw new Error('Failed to update annotations')
                 }
+            })
+            .catch((error) => {
+                setError(error.message)
+                return
             })
         
         const updatedAnnotationsArray = annotations.map((item) => {
@@ -125,10 +129,12 @@ export default function Verify() {
         })
             .then((response) => {
                 if (!response.ok) {
-                    console.error('Error verifying dataset:', response.statusText)
-                    setError('Error verifying dataset')
-                    setVerifying(false)
+                    throw new Error('Failed to verify dataset')
                 }
+            })
+            .catch((error) => {
+                setError(error.message)
+                setVerifying(false)
             })
     }
 
@@ -143,12 +149,14 @@ export default function Verify() {
         })
             .then((response) => {
                 if (!response.ok) {
-                    console.error('Error resolving inconsistencies:', response.statusText)
-                    setError('Error resolving inconsistencies')
+                    throw new Error('Failed to resolve inconsistencies')
                 } else {
                     const updatedAnnotations = annotations.filter((item) => item.image_path !== imagePath)
                     setAnnotations(updatedAnnotations)
                 }
+            })
+            .catch((error) => {
+                setError(error.message)
             })
     }
 
@@ -163,8 +171,7 @@ export default function Verify() {
         })
             .then((response) => {
                 if (!response.ok) {
-                    console.error('Error removing label:', response.statusText)
-                    setError('Error removing label')
+                    throw new Error('Error removing label')
                 } else {
                     const updatedAnnotations = annotations.map((item) => {
                         if (item.image_path === imagePath) {
@@ -190,50 +197,29 @@ export default function Verify() {
                 }
             })
             .catch((error) => {
-                console.error('Error during fetch:', error)
-                setError('Error removing label')
+                setError(error.message)
             })
     }
 
     return (
         <>
-            {/* Error Snackbar */}
-            {error && (
-                <Snackbar
-                    open={Boolean(error)}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                >
-                    <Alert severity="error" onClose={() => setError('')}>
-                        {error}
-                    </Alert>
-                </Snackbar>
-            )}
-            {/* Verifying Status Snackbar */}
-            {verifying && !error && (
-                <Snackbar
-                    open={verifying}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                >
-                    <Alert severity="info">
-                        Verifying Dataset...
-                    </Alert>
-                </Snackbar>
-            )}
+            <ErrorInfoSnackbar error={error} setError={setError} info={verifying} infoMessage='Verifying Dataset...' />
+
             {/* List of images */}
             <Box sx={{ p: 4, pt: 2 }}>
                 {/* Header */}
-                <Box sx={{ width: "95%", maxWidth: 1200, margin: "0 auto", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ width: '95%', maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Button onClick={fetchAnnotations} variant="contained">
+                        <Button onClick={fetchAnnotations} variant='contained'>
                             Refresh
                         </Button>
-                        <Typography variant="body1">Status: {annotationStatus}</Typography>
+                        <Typography variant='body1'>Status: {annotationStatus}</Typography>
                     </Box>
                     <Box>
-                        <Button variant="contained" onClick={verifyDataset} disabled={verifying}>Verify Dataset</Button>
+                        <Button variant='contained' onClick={verifyDataset} disabled={verifying}>Verify Dataset</Button>
                     </Box>
                 </Box>
-                <Typography variant="caption" style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>Validation will use latest trained model. If new data has been added, train a model before validating</Typography>
+                <Typography variant='caption' style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>Validation will use latest trained model. If new data has been added, train a model before validating</Typography>
                 {/* Images */}
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 4, mt: 2 }}>
                     {annotations.map((item, index) => (
@@ -242,7 +228,7 @@ export default function Verify() {
                                 <AnnotatedImage item={item} />
                             </Box>
                             <CardContent>
-                                <Typography variant="body2">
+                                <Typography variant='body2'>
                                     {item.inconsistencies
                                         .map(word => word.toLowerCase().replace(/^\w/, c => c.toUpperCase()))
                                         .join(', ')}

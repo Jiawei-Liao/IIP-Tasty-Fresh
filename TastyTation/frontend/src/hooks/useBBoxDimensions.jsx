@@ -15,7 +15,7 @@ export function useBBoxDimensions({ bbox, imageDimensions }) {
         x: 0,
         y: 0
     })
-    console.log(imageDimensions)
+
     function calculateStyle(bbox, imageDimensions) {
         const { width, height } = imageDimensions
         const [x_center, y_center, boxWidthNorm, boxHeightNorm] = bbox

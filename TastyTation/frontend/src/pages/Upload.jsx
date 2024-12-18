@@ -1,36 +1,13 @@
-import { useState, useCallback } from "react"
-import {
-    Box,
-    Button,
-    IconButton,
-    ImageList,
-    ImageListItem,
-    Typography,
-    TextField,
-    CircularProgress,
-    Select,
-    MenuItem,
-    FormControl,
-    ToggleButton,
-    ToggleButtonGroup,
-    Card,
-    CardContent,
-    Tooltip,
-    Snackbar,
-    Alert
-} from "@mui/material"
-import {
-    Delete as DeleteIcon,
-    CloudUpload as CloudUploadIcon,
-    FileUpload as FileUploadIcon,
-    Start as StartIcon,
-} from "@mui/icons-material"
-import { useNavigate } from "react-router-dom"
+import { useState, useCallback } from 'react'
+import { Box, Button, IconButton, ImageList, ImageListItem, Typography, TextField, CircularProgress, Select, MenuItem, FormControl, ToggleButton, ToggleButtonGroup, Card, CardContent, Tooltip } from '@mui/material'
+import { Delete, CloudUpload, FileUpload, Start } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
+import ErrorInfoSnackbar from './components/ErrorInfoSnackbar'
 
 const TIERS = {
-    TIER1: { name: "Tier 1", description: "Single item, no noise" },
-    TIER2: { name: "Tier 2", description: "Multiple items, no noise OR single item, with noise" },
-    TIER3: { name: "Tier 3", description: "Multiple items, with noise" }
+    TIER1: { name: 'Tier 1', description: 'Single item, no noise' },
+    TIER2: { name: 'Tier 2', description: 'Multiple items, no noise OR single item, with noise' },
+    TIER3: { name: 'Tier 3', description: 'Multiple items, with noise' }
 }
 
 export default function Upload() {
@@ -43,8 +20,8 @@ export default function Upload() {
     const [loading, setLoading] = useState(false)
 
     // Upload settings
-    const [uploadType, setUploadType] = useState("existing")
-    const [className, setClassName] = useState("")
+    const [uploadType, setUploadType] = useState('existing')
+    const [className, setClassName] = useState('')
 
     // Error state
     const [error, setError] = useState(null)
@@ -62,24 +39,23 @@ export default function Upload() {
 
         // Validate upload
         if (images.size === 0) {
-            console.log('no images')
-            setError("No images uploaded")
+            setError('No images uploaded')
             setUploading(false)
             return
         }
 
-        if (uploadType === "new" && className === "") {
-            setError("Class name cannot be empty")
+        if (uploadType === 'new' && className === '') {
+            setError('Class name cannot be empty')
             setUploading(false)
             return
         }
 
         // Prepare data for upload
         const formData = new FormData()
-        formData.append("uploadType", uploadType)
-        formData.append("className", className)
+        formData.append('uploadType', uploadType)
+        formData.append('className', className)
         Array.from(images.values()).forEach((image) => {
-            formData.append("images", image.file, JSON.stringify({ name: image.name, tier: image.tier.name }))
+            formData.append('images', image.file, JSON.stringify({ name: image.name, tier: image.tier.name }))
         })
 
         // Send data to backend
@@ -108,32 +84,32 @@ export default function Upload() {
         // Updates class name to uppercase and replace spaces with hyphens
         let updatedValue = e.target.value
         updatedValue = updatedValue.toUpperCase()
-        updatedValue = updatedValue.replace(/ /g, "-")
+        updatedValue = updatedValue.replace(/ /g, '-')
         setClassName(updatedValue)
     }
 
     function renderUploadButtons() {
         // Render upload buttons based on upload type
-        if (uploadType === "new") {
+        if (uploadType === 'new') {
             return Object.values(TIERS).map((tier) => (
                 <Box key={tier.name}>
                     <input
-                        accept="image/*,video/mp4"
-                        style={{ display: "none" }}
+                        accept='image/*,video/mp4'
+                        style={{ display: 'none' }}
                         id={`image-upload-${tier.name}`}
                         multiple
-                        type="file"
+                        type='file'
                         onChange={(e) => handleImageUpload(e, tier)}
                         disabled={loading}
                     />
                     <label htmlFor={`image-upload-${tier.name}`}>
                         <Tooltip title={tier.description} arrow>
                             <Button
-                                variant="contained"
-                                component="span"
-                                startIcon={<CloudUploadIcon />}
+                                variant='contained'
+                                component='span'
+                                startIcon={<CloudUpload />}
                                 disabled={loading}
-                                sx={{ width: "200px" }}
+                                sx={{ width: '200px' }}
                             >
                                 Upload {tier.name}
                             </Button>
@@ -145,21 +121,21 @@ export default function Upload() {
             return (
                 <Box>
                     <input
-                        accept="image/*,video/mp4"
-                        style={{ display: "none" }}
-                        id="image-upload-button"
+                        accept='image/*,video/mp4'
+                        style={{ display: 'none' }}
+                        id='image-upload-button'
                         multiple
-                        type="file"
+                        type='file'
                         onChange={(e) => handleImageUpload(e)}
                         disabled={loading}
                     />
-                    <label htmlFor="image-upload-button">
+                    <label htmlFor='image-upload-button'>
                         <Button
-                            variant="contained"
-                            component="span"
-                            startIcon={<CloudUploadIcon />}
+                            variant='contained'
+                            component='span'
+                            startIcon={<CloudUpload />}
                             disabled={loading}
-                            sx={{ width: "200px" }}
+                            sx={{ width: '200px' }}
                         >
                             Upload Images
                         </Button>
@@ -176,7 +152,7 @@ export default function Upload() {
     
             const processFile = async (file) => {
                 return new Promise((resolve) => {
-                    if (file.type.startsWith("image/")) {
+                    if (file.type.startsWith('image/')) {
                         const reader = new FileReader()
                         reader.onload = (e) => {
                             setImages((prevImages) => {
@@ -192,7 +168,7 @@ export default function Upload() {
                             resolve()
                         }
                         reader.readAsDataURL(file)
-                    } else if (file.type === "video/mp4") {
+                    } else if (file.type === 'video/mp4') {
                         extractFrames(file, defaultTier).then(resolve)
                     }
                 })
@@ -200,25 +176,25 @@ export default function Upload() {
     
             await Promise.all(files.map(processFile))
         } catch (error) {
-            console.error("Upload error:", error)
+            setError(error.message)
         } finally {
             setLoading(false)
-            event.target.value = ""
+            event.target.value = ''
         }
     }, [])
     
     function extractFrames(file, defaultTier) {
         return new Promise((resolve, reject) => {
             // Create video element
-            const video = document.createElement("video")
+            const video = document.createElement('video')
             video.src = URL.createObjectURL(file)
-            video.crossOrigin = "anonymous"
+            video.crossOrigin = 'anonymous'
             
             // Create canvas element for frame capture
-            const canvas = document.createElement("canvas")
-            const ctx = canvas.getContext("2d")
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
     
-            video.addEventListener("loadedmetadata", () => {
+            video.addEventListener('loadedmetadata', () => {
                 const duration = Math.floor(video.duration)
                 let currentSecond = 0
                 const processedFrames = []
@@ -255,7 +231,7 @@ export default function Upload() {
                                 const frameFile = new File(
                                     [blob], 
                                     `${file.name}-frame-${paddedSecond}.png`, 
-                                    { type: "image/png" }
+                                    { type: 'image/png' }
                                 )
     
                                 const reader = new FileReader()
@@ -283,7 +259,7 @@ export default function Upload() {
                                 }
     
                                 reader.onerror = (error) => {
-                                    console.error('Error reading frame', error)
+                                    console.warn('Error reading frame', error)
                                     currentSecond += captureRate
                                     captureNextFrame()
                                     frameResolve()
@@ -300,7 +276,7 @@ export default function Upload() {
             })
 
             video.onerror = (error) => {
-                console.error('Video processing error', error)
+                console.warn('Video processing error', error)
                 reject(error)
             }
         })
@@ -327,67 +303,47 @@ export default function Upload() {
     }, [])
 
     return (
-        <Box sx={{ width: "95%", maxWidth: 1200, margin: "0 auto" }}>
-            {/* Error Snackbar */}
-            {error && (
-                <Snackbar
-                    open={Boolean(error)}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                >
-                    <Alert severity="error" onClose={() => setError('')}>
-                        {error}
-                    </Alert>
-                </Snackbar>
-            )}
-            {/* Upload Status Snackbar */}
-            {uploading && !error && (
-                <Snackbar
-                    open={uploading}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                >
-                    <Alert severity="info">
-                        Uploading Images...
-                    </Alert>
-                </Snackbar>
-            )}
+        <Box sx={{ width: '95%', maxWidth: 1200, margin: '0 auto' }}>
+            <ErrorInfoSnackbar error={error} setError={setError} info={uploading} infoMessage='Uploading Images...'/>
+
             {/* Upload Type Toggle */}
             <Card sx={{ mb: 3 }}>
                 <CardContent>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <FileUploadIcon sx={{ mr: 1 }} />
-                            <Typography variant="h6">Upload Data</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <FileUpload sx={{ mr: 1 }} />
+                            <Typography variant='h6'>Upload Data</Typography>
                         </Box>
                         {/* New Button on the right */}
                         <Button
-                            variant="contained"
-                            color="primary"
-                            endIcon={<StartIcon />}
-                            sx={{ width: "auto" }}
+                            variant='contained'
+                            color='primary'
+                            endIcon={<Start />}
+                            sx={{ width: 'auto' }}
                             disabled={uploading || images.size === 0 || loading}
                             onClick={startAutoAnnotation}
                         >
                             Start Auto Annotation
                         </Button>
                     </Box>
-                    <Box sx={{ display: "flex", mb: 2 }}>
+                    <Box sx={{ display: 'flex', mb: 2 }}>
                         <ToggleButtonGroup
                             value={uploadType}
                             exclusive
                             onChange={(e, newType) => newType && setUploadType(newType)}
                             fullWidth
                         >
-                            <ToggleButton value="existing">Add To Existing Classes</ToggleButton>
-                            <ToggleButton value="new">Add New Item</ToggleButton>
+                            <ToggleButton value='existing'>Add To Existing Classes</ToggleButton>
+                            <ToggleButton value='new'>Add New Item</ToggleButton>
                         </ToggleButtonGroup>
                     </Box>
-                    {uploadType === "new" && (
+                    {uploadType === 'new' && (
                         <TextField
                             value={className}
                             onChange={handleClassNameChange}
                             fullWidth
-                            variant="outlined"
-                            label="Class Name"
+                            variant='outlined'
+                            label='Class Name'
                         />
                     )}
                 </CardContent>
@@ -396,7 +352,7 @@ export default function Upload() {
             {/* Image Upload Buttons */}
             <Card sx={{ mb: 3 }}>
                 <CardContent>
-                    <Box sx={{ display: "flex", justifyContent: "center", gap: 4 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
                         {renderUploadButtons()}
                     </Box>
                 </CardContent>
@@ -407,46 +363,46 @@ export default function Upload() {
                 <CardContent>
                     {/* Loading Spinner */}
                     {loading && (
-                        <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
                             <CircularProgress />
                         </Box>
                     )}
 
                     {/* Image List */}
                     {images.size > 0 ? (
-                        <ImageList sx={{ width: "100%" }} cols={3} rowHeight={300}>
+                        <ImageList sx={{ width: '100%' }} cols={3} rowHeight={300}>
                             {Array.from(images.values()).map((image) => (
                                 <ImageListItem
                                     key={image.name}
                                     sx={{
-                                        position: "relative",
-                                        border: "1px solid #eee",
+                                        position: 'relative',
+                                        border: '1px solid #eee',
                                         borderRadius: 1,
-                                        overflow: "hidden",
+                                        overflow: 'hidden',
                                     }}
                                 >
                                     {/* Image */}
                                     <img
                                         src={image.src}
                                         alt={image.name}
-                                        loading="lazy"
-                                        style={{ height: "240px", objectFit: "cover" }}
+                                        loading='lazy'
+                                        style={{ height: '240px', objectFit: 'cover' }}
                                     />
                                     {/* Tier Editer */}
                                     <Box
                                         sx={{
-                                            position: "absolute",
+                                            position: 'absolute',
                                             top: 5,
                                             left: 5,
                                             p: 0.5,
                                             borderRadius: 1,
-                                            cursor: "pointer",
-                                            fontSize: "0.8rem",
-                                            textAlign: "center",
+                                            cursor: 'pointer',
+                                            fontSize: '0.8rem',
+                                            textAlign: 'center',
                                         }}
                                     >
-                                        {uploadType === "new" && (
-                                            <FormControl fullWidth size="small">
+                                        {uploadType === 'new' && (
+                                            <FormControl fullWidth size='small'>
                                                 <Select
                                                     value={image.tier}
                                                     onChange={(e) =>
@@ -468,23 +424,23 @@ export default function Upload() {
                                     {/* Delete button */}
                                     <IconButton
                                         sx={{
-                                            position: "absolute",
+                                            position: 'absolute',
                                             top: 5,
                                             right: 5,
-                                            backgroundColor: "rgba(255, 255, 255, 0.7)",
-                                            "&:hover": {
-                                                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                                            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
                                             },
                                         }}
                                         onClick={() => handleDeleteImage(image.name)}
                                     >
-                                        <DeleteIcon />
+                                        <Delete />
                                     </IconButton>
                                 </ImageListItem>
                             ))}
                         </ImageList>
                     ) : (
-                        <Typography variant="body1" color="text.secondary" align="center">
+                        <Typography variant='body1' color='text.secondary' align='center'>
                             No Images Uploaded
                         </Typography>
                     )}

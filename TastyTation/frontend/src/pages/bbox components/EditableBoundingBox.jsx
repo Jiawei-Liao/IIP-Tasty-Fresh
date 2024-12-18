@@ -122,14 +122,14 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
                 {currentClassName}
                 <Box style={{ display: 'flex', marginTop: '4px' }}>
                     <Button 
-                        size="small" 
+                        size='small' 
                         onClick={handleOpenLabelDialog}
                         style={{ minWidth: 'auto', padding: '0 4px' }}
                     >
                         ✏️
                     </Button>
                     <Button 
-                        size="small" 
+                        size='small' 
                         onClick={onDelete}
                         style={{ minWidth: 'auto', padding: '0 4px', marginLeft: '4px' }}
                     >
@@ -142,7 +142,7 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
             <Rnd
                 size={{ width: style.width, height: style.height }}
                 position={{ x: style.x, y: style.y }}
-                bounds="parent"
+                bounds='parent'
                 onDragStart={() => setIsEditing(true)}
                 onDragStop={handleDragStop}
                 onResizeStart={() => setIsEditing(true)}
@@ -164,10 +164,10 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
                         value={searchQuery}
                         onChange={handleSearchChange}
                         autoFocus
-                        margin="dense"
-                        label="Search Class Label"
+                        margin='dense'
+                        label='Search Class Label'
                         fullWidth
-                        variant="standard"
+                        variant='standard'
                     />
                     <List>
                         {filteredClasses.map(({ id, name }) => (

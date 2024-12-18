@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Box, Button, Card, CardContent, Typography, Snackbar, Alert } from '@mui/material'
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from 'react-router-dom'
 import { io } from 'socket.io-client'
 
+import ErrorInfoSnackbar from './components/ErrorInfoSnackbar'
 import AnnotationEditor from './bbox components/AnnotationEditor'
 import AnnotatedImage from './bbox components/AnnotatedImage'
 
@@ -52,7 +53,7 @@ function NewAnnotations() {
             setAnnotationStatus(data.status)
             setNewAnnotationClasses(data.new_annotation_classes)
         } catch (error) {
-            console.error('Error fetching annotations:', error)
+            setError(error.message)
         }
     }
     
@@ -84,9 +85,12 @@ function NewAnnotations() {
         })
             .then((response) => {
                 if (!response.ok) {
-                    console.error('Error updating annotations:', response.statusText)
-                    return
+                    throw new Error('Failed to update annotations')
                 }
+            })
+            .catch((error) => {
+                setError(error.message)
+                return
             })
         
         const updatedAnnotationsArray = annotations.map((item) => {
@@ -129,31 +133,21 @@ function NewAnnotations() {
     
     return (
         <>
-            {/* Error Snackbar */}
-            {error && (
-                <Snackbar
-                    open={error}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                >
-                    <Alert severity="error" onClose={() => setError('')}>
-                        {error}
-                    </Alert>
-                </Snackbar>
-            )}
+            <ErrorInfoSnackbar error={error} setError={setError} info={false} infoMessage='' />
 
             {/* List of images */}
             <Box sx={{ p: 4, pt: 2 }}>
                 {/* Header */}
-                <Box sx={{ width: "95%", maxWidth: 1200, margin: "0 auto", mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ width: '95%', maxWidth: 1200, margin: '0 auto', mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Button onClick={fetchAnnotations} variant="contained">
+                        <Button onClick={fetchAnnotations} variant='contained'>
                             Refresh
                         </Button>
-                        <Typography variant="body1">Status: {annotationStatus}</Typography>
+                        <Typography variant='body1'>Status: {annotationStatus}</Typography>
                     </Box>
                     {annotationStatus === 'DONE' && (
                         <Box>
-                            <Button variant="contained" onClick={addAnnotation}>Add Annotations</Button>
+                            <Button variant='contained' onClick={addAnnotation}>Add Annotations</Button>
                         </Box>
                     )}
                 </Box>
@@ -165,7 +159,7 @@ function NewAnnotations() {
                                 <AnnotatedImage item={item} />
                             </Box>
                             <CardContent>
-                                <Typography variant="body2">
+                                <Typography variant='body2'>
                                     {item.image_path.split('/').pop()} ({item.annotations.length} annotations)
                                 </Typography>
                             </CardContent>
