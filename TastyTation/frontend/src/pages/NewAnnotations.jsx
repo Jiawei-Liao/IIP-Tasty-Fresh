@@ -3,8 +3,8 @@ import { Box, Button, Card, CardContent, Typography, Snackbar, Alert } from '@mu
 import { useNavigate } from "react-router-dom"
 import { io } from 'socket.io-client'
 
-import AnnotationEditor from './components/AnnotationEditor'
-import AnnotatedImage from './components/AnnotatedImage'
+import AnnotationEditor from './bbox components/AnnotationEditor'
+import AnnotatedImage from './bbox components/AnnotatedImage'
 
 function NewAnnotations() {
     const [annotations, setAnnotations] = useState([])

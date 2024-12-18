@@ -243,11 +243,11 @@ export default function Upload() {
     
                             canvas.toBlob((blob) => {
                                 if (!blob) {
-                                    console.warn(`Could not create blob for second ${currentSecond}`);
-                                    currentSecond += captureRate;
-                                    captureNextFrame();
-                                    frameResolve();
-                                    return;
+                                    console.warn(`Could not create blob for second ${currentSecond}`)
+                                    currentSecond += captureRate
+                                    captureNextFrame()
+                                    frameResolve()
+                                    return
                                 }
     
                                 // Pad the seconds to ensure consistent naming
@@ -274,19 +274,19 @@ export default function Upload() {
                                     })
     
                                     // Track processed frames if needed
-                                    processedFrames.push(frameFile);
+                                    processedFrames.push(frameFile)
     
                                     // Move to next frame
-                                    currentSecond += captureRate;
-                                    captureNextFrame();
-                                    frameResolve();
+                                    currentSecond += captureRate
+                                    captureNextFrame()
+                                    frameResolve()
                                 }
     
                                 reader.onerror = (error) => {
-                                    console.error('Error reading frame', error);
-                                    currentSecond += captureRate;
-                                    captureNextFrame();
-                                    frameResolve();
+                                    console.error('Error reading frame', error)
+                                    currentSecond += captureRate
+                                    captureNextFrame()
+                                    frameResolve()
                                 }
     
                                 reader.readAsDataURL(frameFile)

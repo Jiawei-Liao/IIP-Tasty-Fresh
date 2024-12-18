@@ -124,7 +124,7 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, anno
     }
 
     function handleMouseUp(e) {
-        if (!isDrawing || !newAnnotation) return;
+        if (!isDrawing || !newAnnotation) return
 
         e.preventDefault()
         e.stopPropagation()
@@ -241,13 +241,13 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, anno
 
                         }}
                         onMouseDown={(e) => {
-                            handleMouseDown(e);
+                            handleMouseDown(e)
                         }}
                         onMouseMove={(e) => {
-                            handleMouseMove(e);
+                            handleMouseMove(e)
                         }}
                         onMouseUp={(e) => {
-                            handleMouseUp(e);
+                            handleMouseUp(e)
                         }}
                     >
                         {/* Temporary drawing annotation */}

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_socketio import SocketIO
 from flask_cors import CORS
 
@@ -12,6 +12,8 @@ from dataset_verifier.dataset_verifier import verify_dataset
 from dataset_verifier.get_inconsistent_annotations import get_inconsistent_annotations
 from dataset_verifier.update_inconsistent_annotations import resolve_inconsistency
 from dataset_verifier.update_inconsistent_annotations import update_inconsistent_label
+
+from classifiers.segment_images import segment_images
 
 app = Flask(__name__)
 CORS(app)
@@ -155,6 +157,22 @@ def update_inconsistent_label_route():
     label_index = int(request.form.get('label_index'))
     update_inconsistent_label(image_path, label_index)
     return jsonify({'message': 'Inconsistent label updated successfully!'}), 200
+
+''' Endpoints for classifiers page '''
+@app.route('/api/segment-images', methods=['POST'])
+def segment_images_route():
+    images = request.files.getlist('images')
+
+    try:
+        zip_buffer = segment_images(images)
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='segmented_images.zip'
+        )
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
 
 if __name__ == '__main__':
     socketio.run(app, port=5000, debug=True)

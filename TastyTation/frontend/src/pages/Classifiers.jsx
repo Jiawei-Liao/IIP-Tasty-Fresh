@@ -1,7 +1,51 @@
+import { useState } from 'react'
+import { Box, Paper, Stack, Typography, Button } from '@mui/material'
+
+import SegmentObjects from './classifier components/SegmentObjects'
+
 export default function Classifiers() {
+    const [route, setRoute] = useState('Segment Objects')
+    const [classifiers, setClassifiers] = useState(['Sandwiches', 'Burgers', 'Pizza', 'Tacos', 'A'])
+    const [showCreateNewClassifier, setShowCreateNewClassifier] = useState(false)
+
+    function renderContent() {
+        switch (route) {
+            case 'Segment Objects':
+                return <SegmentObjects />
+            default:
+                return <Typography variant="h4">{route}</Typography>
+        }
+    }
+
     return (
-        <div>
-            <h1>Classifiers</h1>
-        </div>
+        <Box sx={{ display: 'flex', margin: 4, gap: 2, height: '80vh' }}>
+            {/* Navigation Menu */}
+            <Paper sx={{ flex: '0 0 20%', maxHeight: '100%', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Typography variant="h5">Tools</Typography>
+                    <Stack spacing={2}>
+                        <Button variant={route === 'Segment Objects' ? 'contained' : 'outlined'} onClick={() => setRoute('Segment Objects')} sx={{ textTransform: 'none', py: 1.5 }}>
+                            Segment Objects
+                        </Button>
+                    </Stack>
+                    <Typography variant="h5">Classifiers</Typography>
+                        <Stack spacing={2}>
+                            <Button variant='outlined' onClick={() => setShowCreateNewClassifier(true)} sx={{ textTransform: 'none', py: 1.5 }}>
+                                Create New Classifier
+                            </Button>
+                            {classifiers.map((classifier, index) => (
+                                <Button key={index} variant={route === classifier ? 'contained' : 'outlined'} onClick={() => setRoute(classifier)} sx={{ textTransform: 'none', py: 1.5 }}>
+                                    {classifier}
+                                </Button>
+                            ))}
+                    </Stack>
+                </Box>
+            </Paper>
+
+            {/* Content */}
+            <Paper sx={{ flex: '1 1 80%', maxHeight: '100%', overflow: 'auto', p: 2 }}>
+                {renderContent()}
+            </Paper>
+        </Box>
     )
 }

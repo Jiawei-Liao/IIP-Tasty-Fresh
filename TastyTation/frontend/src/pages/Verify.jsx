@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { Box, Button, Typography, Card, CardContent } from '@mui/material'
+import { Box, Button, Typography, Card, CardContent, Alert, Snackbar } from '@mui/material'
 import { io } from 'socket.io-client'
 
-import VerificationAnnotationEditor from './components/VerificationAnnotationEditor'
-import AnnotationEditor from './components/AnnotationEditor'
-import AnnotatedImage from './components/AnnotatedImage'
+import VerificationAnnotationEditor from './bbox components/VerificationAnnotationEditor'
+import AnnotatedImage from './bbox components/AnnotatedImage'
 
 export default function Verify() {
     const [annotations, setAnnotations] = useState([])
@@ -12,6 +11,7 @@ export default function Verify() {
     const [annotationClasses, setAnnotationClasses] = useState([])
     const [currentIndex, setCurrentIndex] = useState(-1)
     const [error, setError] = useState('')
+    const [verifying, setVerifying] = useState(false)
     const socketRef = useRef(null)
 
     // Fetch annotations and setup socket subscriber
@@ -49,6 +49,12 @@ export default function Verify() {
             setAnnotations(data.inconsistent_annotations)
             setAnnotationStatus(data.status)
             setAnnotationClasses(data.annotation_classes)
+
+            if (data.status === 'STARTED') {
+                setVerifying(true)
+            } else {
+                setVerifying(false)
+            }
         } catch (error) {
             console.error('Error fetching annotations:', error)
         }
@@ -113,6 +119,7 @@ export default function Verify() {
 
     // Verify dataset
     function verifyDataset() {
+        setVerifying(true)
         fetch('/api/verify-dataset', {
             method: 'POST',
         })
@@ -120,14 +127,15 @@ export default function Verify() {
                 if (!response.ok) {
                     console.error('Error verifying dataset:', response.statusText)
                     setError('Error verifying dataset')
+                    setVerifying(false)
                 }
             })
     }
 
     // Resolve inconsistencies
     function resolveInconsistencies(imagePath) {
-        const formData = new FormData();
-        formData.append('image_path', imagePath);
+        const formData = new FormData()
+        formData.append('image_path', imagePath)
 
         fetch('/api/resolve-inconsistency', {
             method: 'POST',
@@ -145,9 +153,9 @@ export default function Verify() {
     }
 
     function updateRemoveLabel(imagePath, index) {
-        const formData = new FormData();
-        formData.append('image_path', imagePath);
-        formData.append('label_index', index);
+        const formData = new FormData()
+        formData.append('image_path', imagePath)
+        formData.append('label_index', index)
     
         fetch('/api/update-inconsistent-label', {
             method: 'POST',
@@ -155,40 +163,62 @@ export default function Verify() {
         })
             .then((response) => {
                 if (!response.ok) {
-                    console.error('Error removing label:', response.statusText);
-                    setError('Error removing label');
+                    console.error('Error removing label:', response.statusText)
+                    setError('Error removing label')
                 } else {
                     const updatedAnnotations = annotations.map((item) => {
                         if (item.image_path === imagePath) {
-                            const updatedItem = { ...item };
+                            const updatedItem = { ...item }
                             
                             // Before removing the annotation, adjust the inconsistency indexes
                             const adjustedInconsistencyIndex = updatedItem.dataset_inconsistency_index.map(idx => 
                                 idx > index ? idx - 1 : idx
-                            ).filter(idx => idx !== index);
+                            ).filter(idx => idx !== index)
     
                             // Remove the annotation
-                            updatedItem.annotations.splice(index, 1);
+                            updatedItem.annotations.splice(index, 1)
                             
                             // Update the inconsistency indexes
-                            updatedItem.dataset_inconsistency_index = adjustedInconsistencyIndex;
+                            updatedItem.dataset_inconsistency_index = adjustedInconsistencyIndex
                             
-                            return updatedItem;
+                            return updatedItem
                         }
-                        return item;
-                    });
+                        return item
+                    })
     
-                    setAnnotations(updatedAnnotations);
+                    setAnnotations(updatedAnnotations)
                 }
             })
             .catch((error) => {
-                console.error('Error during fetch:', error);
-                setError('Error removing label');
-            });
+                console.error('Error during fetch:', error)
+                setError('Error removing label')
+            })
     }
 
     return (
         <>
+            {/* Error Snackbar */}
+            {error && (
+                <Snackbar
+                    open={Boolean(error)}
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                >
+                    <Alert severity="error" onClose={() => setError('')}>
+                        {error}
+                    </Alert>
+                </Snackbar>
+            )}
+            {/* Verifying Status Snackbar */}
+            {verifying && !error && (
+                <Snackbar
+                    open={verifying}
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                >
+                    <Alert severity="info">
+                        Verifying Dataset...
+                    </Alert>
+                </Snackbar>
+            )}
             {/* List of images */}
             <Box sx={{ p: 4, pt: 2 }}>
                 {/* Header */}
@@ -200,7 +230,7 @@ export default function Verify() {
                         <Typography variant="body1">Status: {annotationStatus}</Typography>
                     </Box>
                     <Box>
-                        <Button variant="contained" onClick={verifyDataset}>Verify Dataset</Button>
+                        <Button variant="contained" onClick={verifyDataset} disabled={verifying}>Verify Dataset</Button>
                     </Box>
                 </Box>
                 <Typography variant="caption" style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>Validation will use latest trained model. If new data has been added, train a model before validating</Typography>
