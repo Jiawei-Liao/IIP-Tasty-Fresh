@@ -1,0 +1,17 @@
+numpy==1.23.5
+typing-extensions==4.12.2
+onnx
+onnxruntime
+ultralytics
+pillow
+pylibdmtx
+pandas
+openpyxl
+rembg
+uvicorn
+pydantic
+fastapi
+python-multipart
+pyzbar
+zxing-cpp
+scikit-image

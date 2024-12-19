@@ -3,7 +3,6 @@ FROM nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.0-py3
 
 # Set working directory
 WORKDIR /app
-COPY . /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -31,14 +30,18 @@ RUN git clone https://github.com/jocover/jetson-ffmpeg.git /tmp/jetson-ffmpeg &&
 ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
 
 # Install Python dependencies
+COPY requirements.txt .
 RUN python3 -m pip install --no-cache-dir --upgrade pip \
     && python3 -m pip install --no-cache-dir -r requirements.txt
 
 # Remove any explicit OpenCV installation from pip
 RUN python3 -m pip uninstall -y opencv-python opencv-python-headless
 
-# EXPOSE 8000
+# Copy rest of the application
+COPY . .
 
+# Used previously with web app
+# EXPOSE 8000
 # CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 CMD ["python3", "FULL_PIPELINE.py"]
