@@ -11,7 +11,6 @@ from typing import List, Tuple
 import pandas as pd
 from skimage.metrics import structural_similarity as ssim
 
-
 # Load YOLO models using Ultralytics
 DM_Model = YOLO('YOLOmodels/DMbarcode.pt')
 General_Model = YOLO('YOLOmodels/v3.engine')
@@ -19,9 +18,6 @@ Sandwich_Model = YOLO('YOLOmodels/sandwich_classifier.pt')
 
 DM_Model.to('cuda')
 Sandwich_Model.to('cuda')
-
-
-
 
 # Define a Detection data class to store detection information
 class Detection:
