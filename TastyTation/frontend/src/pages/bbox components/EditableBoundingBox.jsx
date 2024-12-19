@@ -1,14 +1,29 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, List, ListItem, ListItemText } from '@mui/material'
 import { Rnd } from 'react-rnd'
 import { useBBoxDimensions } from '../../hooks/useBBoxDimensions'
 
-export default function EditableBoundingBox({ class_id, bbox, imageDimensions, onUpdate, onDelete, newAnnotationClasses }) {
+/**
+ * @see BoundingBox for not editable version
+ * @param {Int} class_id: ID of the class this bounding box represents
+ * @param {[Float]} bbox: Array of 4 values, representing x_center, y_center, width and height of a bounding box (YOLO format)
+ * @param {{width: Int, height: Int, offsetX: Int, offsetY: Int, imageAspectRatio: Float}} imageDimensions: An object representing the dimensions of an image
+ * @param {function} onUpdate: Callback function to update annotations when this bounding box changes
+ * @param {function} onDelete: Callback function to delete this annotation
+ * @param {[{id: Int, name: String}]} annotationCLasses: Array of annotation class id and name objects
+ * @param {Boolean} highlighted: Whether to highlight this bounding box or not
+ * @param {Boolean} isEditing: Whether to hide labels or not
+ * @param {React.Dispatch<Boolean>} setIsEditing: Set whether is editing or not
+ * @returns {JSX.Element} Rnd editable box with label for annotation class name and edit and delete functionality
+ */
+export default function EditableBoundingBox({ class_id, bbox, imageDimensions, onUpdate, onDelete, annotationClasses, highlighted, isEditing, setIsEditing }) {
+    // Get style of bounding box
     const [style, updateStyle] = useBBoxDimensions({ bbox, imageDimensions })
+
+    // Variables for editing labels
     const [labelDialogOpen, setLabelDialogOpen] = useState(false)
-    const [isEditing, setIsEditing] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
-    const [filteredClasses, setFilteredClasses] = useState(newAnnotationClasses)
+    const [filteredClasses, setFilteredClasses] = useState(annotationClasses)
 
     if (style.display === 'none') return null
 
@@ -53,7 +68,7 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
         const query = event.target.value
         setSearchQuery(query)
         setFilteredClasses(
-            newAnnotationClasses.filter(classItem =>
+            annotationClasses.filter(classItem =>
                 classItem.name.toLowerCase().includes(query.toLowerCase())
             )
         )
@@ -65,7 +80,7 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
         setLabelDialogOpen(false)
     }
 
-    const currentClassName = newAnnotationClasses.find(item => item.id === class_id)?.name || 'unknown'
+    const currentClassName = annotationClasses.find(item => item.id === class_id)?.name || 'unknown'
 
     return (
         <>
@@ -75,7 +90,14 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
                 ref={(el) => {
                     if (el) {
                         const labelHeight = el.offsetHeight
-                        el.style.top = `${style.y - labelHeight - 5}px`
+                        let topPosition = style.y - labelHeight - 5
+            
+                        // Clip label to top of image if it goes off screen
+                        if (topPosition < 0) {
+                            topPosition = 10
+                        }
+            
+                        el.style.top = `${topPosition}px`
                     }
                 }}
                 style={{
@@ -100,14 +122,14 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
                 {currentClassName}
                 <Box style={{ display: 'flex', marginTop: '4px' }}>
                     <Button 
-                        size="small" 
+                        size='small' 
                         onClick={handleOpenLabelDialog}
                         style={{ minWidth: 'auto', padding: '0 4px' }}
                     >
                         ✏️
                     </Button>
                     <Button 
-                        size="small" 
+                        size='small' 
                         onClick={onDelete}
                         style={{ minWidth: 'auto', padding: '0 4px', marginLeft: '4px' }}
                     >
@@ -120,7 +142,7 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
             <Rnd
                 size={{ width: style.width, height: style.height }}
                 position={{ x: style.x, y: style.y }}
-                bounds="parent"
+                bounds='parent'
                 onDragStart={() => setIsEditing(true)}
                 onDragStop={handleDragStop}
                 onResizeStart={() => setIsEditing(true)}
@@ -128,7 +150,8 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
                 style={{
                     border: '2px solid red',
                     position: 'absolute',
-                    zIndex: 1
+                    zIndex: 1,
+                    backgroundColor: highlighted ? 'rgba(255, 0, 0, 0.5)' : 'transparent'
                 }}
             />
 
@@ -141,10 +164,10 @@ export default function EditableBoundingBox({ class_id, bbox, imageDimensions, o
                         value={searchQuery}
                         onChange={handleSearchChange}
                         autoFocus
-                        margin="dense"
-                        label="Search Class Label"
+                        margin='dense'
+                        label='Search Class Label'
                         fullWidth
-                        variant="standard"
+                        variant='standard'
                     />
                     <List>
                         {filteredClasses.map(({ id, name }) => (

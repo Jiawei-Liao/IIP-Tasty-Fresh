@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
 
+/**
+ * Calculates the image dimensions given an image and the container
+ * @param {React.MutableRefObject} imageRef: Reference to image
+ * @param {React.MutableRefObject} containerRef: Reference to image container 
+ * @returns {{width: Int, height: Int, offsetX: Int, offsetY: Int, imageAspectRatio: Float}} An object representing the dimensions of an image
+ */
 export function useImageDimensions(imageRef, containerRef) {
     const [dimensions, setDimensions] = useState({
         width: 0,

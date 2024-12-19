@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
 
+/**
+ * Helper hook to calculate the style of a Box div based on the bounding box and image dimensions
+ * @param {[Float]} bbox: Array of 4 values, representing x_center, y_center, width and height of a bounding box (YOLO format)
+ * @param {{width: Int, height: Int, offsetX: Int, offsetY: Int, imageAspectRatio: Float}} imageDimensions: An object representing the dimensions of an image
+ * @returns {{position: String, display: String, width: Int, height: Int, x: int, y: Int}, function} Calculated style and update function for the bounding box
+ */
 export function useBBoxDimensions({ bbox, imageDimensions }) {
     const [style, setStyle] = useState({
         position: 'absolute',
