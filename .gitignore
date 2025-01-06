@@ -13,5 +13,6 @@
 /TastyTation/backend/general_model_annotator/rembg_cropped_images
 /TastyTation/backend/general_model_annotator/tmp_dataset
 /TastyTation/backend/runs
+/TastyTation/backend/classifiers/*/
 *.pt
 /train/general_model/runs

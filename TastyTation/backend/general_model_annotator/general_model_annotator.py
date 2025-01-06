@@ -10,7 +10,6 @@ from datetime import datetime
 from rembg import remove, new_session
 from PIL import Image
 import random
-import re
 
 # Directories
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +27,7 @@ TIERS = {
 }
 
 def save_uploaded_images(images, upload_type, class_name, send_annotation_status):
-    """Save uploaded images to disk"""
+    '''Save uploaded images to disk'''
     # Clear existing images
     if os.path.exists(NEW_DATA_DIR):
         shutil.rmtree(NEW_DATA_DIR)
@@ -126,7 +125,7 @@ def annotate_images(upload_type, class_name, send_annotation_status):
     send_annotation_status('DONE')
 
 def annotate(is_tier1, rembg_session, tier):
-    """Annotate images in tier"""
+    '''Annotate images in tier'''
     tier_path = os.path.join(NEW_DATA_DIR, tier)
     for img_file in os.listdir(tier_path):
         if img_file.lower().endswith(('.png', '.jpg', '.jpeg')):            
@@ -165,10 +164,10 @@ def annotate(is_tier1, rembg_session, tier):
                         for class_id, bbox in annotations:
                             class_id = int(class_id)
                             x_center, y_center, bbox_width, bbox_height = bbox_to_yolo(bbox, image.width, image.height)
-                            f.write(f"{class_id} {x_center} {y_center} {bbox_width} {bbox_height}\n")
+                            f.write(f'{class_id} {x_center} {y_center} {bbox_width} {bbox_height}\n')
 
 def bbox_to_yolo(bbox, width, height):
-    """Helper function to convert bbox to YOLO format"""
+    '''Helper function to convert bbox to YOLO format'''
     x_center = (bbox[0] + bbox[2]) / (2 * width)
     y_center = (bbox[1] + bbox[3]) / (2 * height)
     bbox_width = (bbox[2] - bbox[0]) / width
@@ -177,7 +176,7 @@ def bbox_to_yolo(bbox, width, height):
     return x_center, y_center, bbox_width, bbox_height
 
 def annotate_model(model, image):
-    """Annotate image using model"""
+    '''Annotate image using model'''
     items = []
     results = model(image)
     for detection in results[0].boxes.data:
@@ -191,20 +190,20 @@ def create_dataset_yaml():
     global YAML_CONTENT, NEW_CLASS_ID, CLASS_NAME, MODEL, NEW_CLASS
     if YAML_CONTENT is None:
         if NEW_CLASS:
-            yaml_content = f"""train: ./train/images
+            yaml_content = f'''train: ./train/images
 val: ./valid/images
 test: ./test/images
 
 nc: {NC}
 names: {list(MODEL.names.values()) + [CLASS_NAME]}
-"""
+'''
         else:
-            yaml_content = f"""train: ./train/images
+            yaml_content = f'''train: ./train/images
 val: ./valid/images
 test: ./test/images
 
 nc: {NC}
-names: {list(MODEL.names.values())}"""
+names: {list(MODEL.names.values())}'''
 
     if os.path.exists(DATASET_DIR):
         with open(os.path.join(DATASET_DIR, 'data.yaml'), 'w') as f:
@@ -214,7 +213,7 @@ names: {list(MODEL.names.values())}"""
             f.write(yaml_content)
 
 def add_dataset():
-    """Adds random existing images to training set to avoid overfittin on new data"""
+    '''Adds random existing images to training set to avoid overfittin on new data'''
     # Copy dataset to tmp dataset
     if os.path.exists(DATASET_DIR):
         shutil.rmtree(DATASET_DIR)
@@ -353,7 +352,7 @@ def add_dataset():
                     if last_char != '\n':
                         f.write('\n')
                     
-                    f.write(f"{NEW_CLASS_ID} {x_center} {y_center} {bbox_width} {bbox_height}\n")
+                    f.write(f'{NEW_CLASS_ID} {x_center} {y_center} {bbox_width} {bbox_height}\n')
 
                     cur_images += 1
         
@@ -375,7 +374,7 @@ def add_dataset():
         shutil.copy(os.path.join(ANNOTATIONS_DIR, 'labels', img_name + '.txt'), label_path)
 
 class DatasetAllocator:
-    """Helper class to allocate images to training, validation, and test sets"""
+    '''Helper class to allocate images to training, validation, and test sets'''
     def __init__(self):
         self.dataset_path = DATASET_DIR
         self.count = 0

@@ -36,7 +36,7 @@ def add_annotations(send_annotation_status):
     send_annotation_status('NOT STARTED')
 
 class DatasetAllocator:
-    """Helper class to allocate images to training, validation, and test sets"""
+    '''Helper class to allocate images to training, validation, and test sets'''
     def __init__(self):
         self.dataset_path = DATASET_DIR
         self.count = 0

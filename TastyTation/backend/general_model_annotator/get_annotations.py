@@ -6,7 +6,7 @@ import yaml
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_general_annotations():
-    """Get annotations creayed by general model annotator"""
+    '''Get annotations creayed by general model annotator'''
     annotations = []
     labels_dir = os.path.join(CUR_DIR, 'annotations', 'labels')
     images_dir = os.path.join(CUR_DIR, 'annotations', 'images')

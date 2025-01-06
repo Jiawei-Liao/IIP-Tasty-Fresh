@@ -17,7 +17,7 @@ def verify_dataset(send_verification_status_route):
     
     # Load model
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f"Using device: {device}")
+    print(f'Using device: {device}')
     # TODO: figure out what to do when new data/model has been trained
     model_path = os.path.join(CUR_DIR, '..', 'general_model_annotator', 'general_model.pt')
     MODEL = YOLO(model_path).to(device)
@@ -36,9 +36,9 @@ def verify_dataset(send_verification_status_route):
             inconsistencies = {
                 'image_path': f'/images/dataset/{split}/images/{os.path.basename(img_path)}',
                 'inconsistencies': [],
-                "dataset_inconsistency_index": set(),
-                "verified_inconsistency_index": set(),
-                "verified_annotations": []
+                'dataset_inconsistency_index': set(),
+                'verified_inconsistency_index': set(),
+                'verified_annotations': []
             }
 
             existing_labels = []
@@ -48,7 +48,7 @@ def verify_dataset(send_verification_status_route):
                         class_id, x_center, y_center, width, height = map(float, line.strip().split())
                         existing_labels.append((class_id, (x_center, y_center, width, height)))
             except Exception as e:
-                print(f"Error reading label file {label_path}: {e}")
+                print(f'Error reading label file {label_path}: {e}')
                 inconsistencies['inconsistencies'].append('ERROR WITH LABELS')
                 continue
 
@@ -60,7 +60,7 @@ def verify_dataset(send_verification_status_route):
                     bbox = bbox_to_yolo([x1, y1, x2, y2], img_path)
                     annotations.append((class_id, bbox))
             except Exception as e:
-                print(f"Error verifying image {img_path}: {e}")
+                print(f'Error verifying image {img_path}: {e}')
                 inconsistencies['inconsistencies'].append('ERROR WITH VERIFICATION')
                 continue
             
