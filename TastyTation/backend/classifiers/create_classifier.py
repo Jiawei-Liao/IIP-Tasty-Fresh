@@ -11,5 +11,11 @@ def create_classifier(classifier_name):
     
     # Create classifier directory
     os.makedirs(classifier_dir)
-    os.makedirs(os.path.join(classifier_dir, 'dataset'))
+    dataset_dir = os.path.join(classifier_dir, 'dataset')
+    os.makedirs(dataset_dir)
+
+    os.makedirs(os.path.join(dataset_dir, 'train'))
+    os.makedirs(os.path.join(dataset_dir, 'val'))
+    os.makedirs(os.path.join(dataset_dir, 'test'))
+
     os.makedirs(os.path.join(classifier_dir, 'models'))

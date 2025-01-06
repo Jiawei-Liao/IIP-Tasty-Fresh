@@ -3,11 +3,11 @@ import { Box, Paper, Stack, Typography, Button } from '@mui/material'
 
 import SegmentObjects from './classifier components/SegmentObjects'
 import CreateNewClassifier from './classifier components/CreateNewClassifer'
-import { use } from 'react'
+import Classifier from './classifier components/Classifier'
 
 export default function Classifiers() {
     const [route, setRoute] = useState('Segment Objects')
-    const [classifiers, setClassifiers] = useState(['Sandwiches', 'Burgers', 'Pizza', 'Tacos', 'A'])
+    const [classifiers, setClassifiers] = useState([])
     const [showCreateNewClassifier, setShowCreateNewClassifier] = useState(false)
 
     useEffect(() => {
@@ -23,7 +23,7 @@ export default function Classifiers() {
             case 'Segment Objects':
                 return <SegmentObjects />
             default:
-                return <Typography variant='h4'>{route}</Typography>
+                return <Classifier route={route} />
         }
     }
 

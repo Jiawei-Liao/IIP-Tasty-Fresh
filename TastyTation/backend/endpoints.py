@@ -16,12 +16,15 @@ from dataset_verifier.update_inconsistent_annotations import update_inconsistent
 from classifiers.segment_images import segment_images
 from classifiers.create_classifier import create_classifier
 from classifiers.get_classifiers import get_classifiers
+from classifiers.add_images import add_images
+from classifiers.get_classifier import get_classifier
+from classifiers.train_classifier import train_classifier
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
+socketio = SocketIO(app, cors_allowed_origins='http://localhost:3000')
 
-""" Endpoints for editing annotations components """
+''' Endpoints for editing annotations components '''
 # Fetch image based on the path
 @app.route('/images/<path:full_path>')
 def get_image_route(full_path):
@@ -53,7 +56,7 @@ def edit_labels_route():
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 
-""" Endpoints for getting upload images page """
+''' Endpoints for getting upload images page '''
 # Upload images, sending success and async annotate images
 @app.route('/api/annotate', methods=['POST'])
 def annotate_route():
@@ -69,7 +72,7 @@ def annotate_route():
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 
-""" Endpoints for new annotations page """
+''' Endpoints for new annotations page '''
 # Global annotation status
 ANNOTATION_STATUS = 'DONE' if os.path.exists('./general_model_annotator/annotations') else 'NOT STARTED'
 
@@ -89,7 +92,7 @@ def send_annotation_status_route(status):
         # Send annotation status
         socketio.emit('annotation_status', {'status': ANNOTATION_STATUS, 'annotations': annotations, 'new_annotation_classes': new_annotation_classes})
     except Exception as e:
-        print(f"Error sending annotation status: {e}")
+        print(f'Error sending annotation status: {e}')
         socketio.emit('annotation_status', {'status': 'ERROR', 'annotations': [], 'new_annotation_classes': []})
 
 # Get annotation status
@@ -107,7 +110,7 @@ def add_annotations_route():
     add_annotations(send_annotation_status_route)
     return jsonify({'message': 'Annotations added successfully!'}), 200
 
-""" Endpoints for verify annotations page """
+''' Endpoints for verify annotations page '''
 # Global verification status
 VERIFICATION_STATUS = 'DONE' if os.path.exists('./dataset_verifier/inconsistent_annotations.json') else 'NOT STARTED'
 
@@ -127,7 +130,7 @@ def send_verification_status_route(status):
         # Send verification status
         socketio.emit('verification_status', {'status': VERIFICATION_STATUS, 'inconsistent_annotations': inconsistent_annotations, 'annotation_classes': annotation_classes})
     except Exception as e:
-        print(f"Error sending verification status: {e}")
+        print(f'Error sending verification status: {e}')
         socketio.emit('verification_status', {'status': 'ERROR', 'inconsistent_annotations': [], 'annotation_classes': []})
 
 # Get verification status
@@ -193,6 +196,43 @@ def create_classifier_route():
 def get_classifiers_route():
     classifiers = get_classifiers()
     return jsonify({'classifiers': classifiers}), 200
+
+# Add images to specified classifier of specified class
+@app.route('/api/add-classifier-images', methods=['POST'])
+def add_classifier_images_route():
+    classifier_name = request.form.get('classifierName')
+    class_name = request.form.get('className')
+    images = request.files.getlist('images')
+    add_images(classifier_name, class_name, images)
+    return jsonify({'message': 'Images added to classifier successfully!'}), 200
+
+# Socket for sending classifier training status
+def send_classifier_training_status_route(classifier_name, status):
+    try:
+        socketio.emit(f'{classifier_name}_training_status', {'status': status})
+    except Exception as e:
+        print(f'Error sending classifier training status: {e}')
+
+# Train classifier
+@app.route('/api/train-classifier', methods=['POST'])
+def train_classifier_route():
+    classifier_name = request.form.get('classifierName')
+    train_classifier(classifier_name, send_classifier_training_status_route)
+    return jsonify({'message': 'Classifier training started!'}), 200
+
+# Get classifier model
+@app.route('/api/get-classifier-model', methods=['POST'])
+def get_classifier_model_route():
+    classifier_name = request.form.get('classifierName')
+    classifier_model = get_classifier(classifier_name)
+    if classifier_model:
+        return send_file(
+            classifier_model,
+            as_attachment=True,
+            download_name=f'{classifier_name}.pt'
+        )
+    else:
+        return jsonify({'message': 'Classifier model not found!'}), 404
 
 if __name__ == '__main__':
     socketio.run(app, port=5000, debug=True)
