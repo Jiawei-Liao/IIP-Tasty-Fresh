@@ -20,6 +20,10 @@ from classifiers.add_images import add_images
 from classifiers.get_classifier import get_classifier
 from classifiers.train_classifier import train_classifier
 
+from detection_model.get_detection_models import get_detection_models
+from detection_model.get_detection_model import get_detection_model
+from detection_model.train_detection_model import train_detection_model
+
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins='http://localhost:3000')
@@ -207,7 +211,7 @@ def add_classifier_images_route():
     return jsonify({'message': 'Images added to classifier successfully!'}), 200
 
 # Socket for sending classifier training status
-def send_classifier_training_status_route(classifier_name, status):
+def send_training_status_route(classifier_name, status):
     try:
         socketio.emit(f'{classifier_name}_training_status', {'status': status})
     except Exception as e:
@@ -217,7 +221,7 @@ def send_classifier_training_status_route(classifier_name, status):
 @app.route('/api/train-classifier', methods=['POST'])
 def train_classifier_route():
     classifier_name = request.form.get('classifierName')
-    train_classifier(classifier_name, send_classifier_training_status_route)
+    train_classifier(classifier_name, send_training_status_route)
     return jsonify({'message': 'Classifier training started!'}), 200
 
 # Get classifier model
@@ -233,6 +237,34 @@ def get_classifier_model_route():
         )
     else:
         return jsonify({'message': 'Classifier model not found!'}), 404
+
+''' Endpoints for train page'''
+# Get model to download based on model name
+@app.route('/api/get-detection-model', methods=['POST'])
+def get_detection_model_route():
+    model_name = request.form.get('model')
+
+    model = get_detection_model(model_name)
+    if model:
+        return send_file(
+            model,
+            as_attachment=True,
+            download_name=f'{model_name}.pt'
+        )
+    else:
+        return jsonify({'message': 'Model not found!'}), 404
+
+# Get list of available models
+@app.route('/api/get-detection-models', methods=['GET'])
+def get_detection_models_route():
+    models = get_detection_models()
+    return jsonify({'models': models}), 200
+
+# Train new detection model
+@app.route('/api/train-detection-model', methods=['GET'])
+def train_detection_model_route():
+    train_detection_model(send_training_status_route)
+    return jsonify({'message': 'Detection model training started!'}), 200
 
 if __name__ == '__main__':
     socketio.run(app, port=5000, debug=True)

@@ -28,5 +28,5 @@ def train_classifier_thread(classifier_name, send_classifier_training_status_rou
     
     model = YOLO('yolo11s-cls.pt')
     model.add_callback('on_train_epoch_end', status_callback)
-    model.train(data=os.path.join(CUR_DIR, classifier_name, 'dataset'), epochs=30, project=os.path.join(CUR_DIR, classifier_name, 'models'), name=datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    model.train(data=os.path.join(CUR_DIR, classifier_name, 'dataset'), epochs=30, imgsz=640, project=os.path.join(CUR_DIR, classifier_name, 'models'), name=datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     model.save(os.path.join(CUR_DIR, classifier_name, 'models', f'{classifier_name}.pt'))
