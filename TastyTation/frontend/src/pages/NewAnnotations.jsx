@@ -130,7 +130,30 @@ function NewAnnotations() {
                 }
             })
     }
-    
+
+    function onDeleteImage(imagePath) {
+        const formData = new FormData()
+        formData.append('imagePath', imagePath)
+
+        fetch('/api/delete-image', {
+            method: 'POST',
+            body: formData
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete image')
+                } else {
+                    if (currentIndex >= annotations.length - 1) {
+                        setCurrentIndex(currentIndex - 1)
+                    }
+                    setAnnotations(annotations.filter((item) => item.image_path !== imagePath))
+                }
+            })
+            .catch((error) => {
+                setError(error.message)
+            })
+    }
+
     return (
         <>
             <ErrorInfoSnackbar error={error} setError={setError} info={false} infoMessage='' />
@@ -176,6 +199,7 @@ function NewAnnotations() {
                     setCurrentIndex={setCurrentIndex}
                     annotationClasses={newAnnotationClasses}
                     onAnnotationsChange={onAnnotationsChange}
+                    onDeleteImage={onDeleteImage}
                 />
             )}
         </>

@@ -19,6 +19,9 @@ from classifiers.get_classifiers import get_classifiers
 from classifiers.add_images import add_images
 from classifiers.get_classifier import get_classifier
 from classifiers.train_classifier import train_classifier
+from classifiers.view_classifier_classes import view_classifier_classes
+from classifiers.delete_class import delete_class
+from classifiers.rename_class import rename_class
 
 from detection_model.get_detection_models import get_detection_models
 from detection_model.get_detection_model import get_detection_model
@@ -57,6 +60,24 @@ def edit_labels_route():
                 f.write(annotation)
 
         return jsonify({'message': 'Labels updated successfully!'}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+@app.route('/api/delete-image', methods=['POST'])
+def delete_image_route():
+    try:
+        image_path = request.form.get('imagePath')
+        image_path = image_path.replace('/images/', '', 1)
+        label_path = image_path.replace('/images/', '/labels/', 1)
+        root, ext = os.path.splitext(label_path)
+        label_path = root + '.txt'
+        print(image_path)
+        print(label_path)
+
+        os.remove(image_path)
+        os.remove(label_path)
+
+        return jsonify({'message': 'Image deleted successfully!'}), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 
@@ -237,6 +258,30 @@ def get_classifier_model_route():
         )
     else:
         return jsonify({'message': 'Classifier model not found!'}), 404
+
+# View classifiers classes
+@app.route('/api/view-classifier-classes', methods=['POST'])
+def view_classifier_classes_route():
+    classifier_name = request.form.get('classifierName')
+    classes = view_classifier_classes(classifier_name)
+    return jsonify({'classes': classes}), 200
+
+@app.route('/api/delete-class', methods=['POST'])
+def delete_class_route():
+    classifier_name = request.form.get('classifierName')
+    class_name = request.form.get('className')
+    delete_class(classifier_name, class_name)
+    classes = view_classifier_classes(classifier_name)
+    return jsonify({'classes': classes}), 200
+
+@app.route('/api/rename-class', methods=['POST'])
+def rename_class_route():
+    classifier_name = request.form.get('classifierName')
+    old_class_name = request.form.get('oldClassName')
+    new_class_name = request.form.get('newClassName')
+    rename_class(classifier_name, old_class_name, new_class_name)
+    classes = view_classifier_classes(classifier_name)
+    return jsonify({'classes': classes}), 200
 
 ''' Endpoints for train page'''
 # Get model to download based on model name

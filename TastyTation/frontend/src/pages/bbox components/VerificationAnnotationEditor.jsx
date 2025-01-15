@@ -15,7 +15,7 @@ import AnnotatedImage from './AnnotatedImage'
  * @param {function} updateRemoveLabel: Callback function when a label is removed, to update inconsistency indexes, optional 
  * @returns {JSX.Element} An editable annotated image with navigation functionality
  */
-export default function VerificationAnnotationEditor({ annotations, currentIndex, setCurrentIndex, annotationClasses, onAnnotationsChange, resolveInconsistencies, updateRemoveLabel }) {
+export default function VerificationAnnotationEditor({ annotations, currentIndex, setCurrentIndex, annotationClasses, onAnnotationsChange, resolveInconsistencies, updateRemoveLabel, onDeleteImage }) {
     // Return null if invalid
     if (!annotations.length || currentIndex < 0 || currentIndex >= annotations.length) {
         return null
@@ -36,9 +36,15 @@ export default function VerificationAnnotationEditor({ annotations, currentIndex
             {/* Header Section */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, position: 'relative' }}>
                 {/* Resolve Inconsistencies Button */}
-                <Button onClick={() => resolveInconsistencies(currentImage.image_path)} variant='contained' size='large' sx={{ backgroundColor: 'green', position: 'absolute', left: 16 }}>
-                    Resolve
-                </Button>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button onClick={() => resolveInconsistencies(currentImage.image_path)} variant='contained' size='large' sx={{ backgroundColor: 'green' }}>
+                        Resolve
+                    </Button>
+                    <Button onClick={() => onDeleteImage(currentImage.image_path)} variant='contained' size='large' sx={{ backgroundColor: 'red' }}>
+                        Delete
+                    </Button>
+                </Box>
+                
                 {/* Navigation Section */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 3, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
                     <Button onClick={() => navigate(-1)} disabled={currentIndex === 0} startIcon={<ArrowBack />} variant='outlined' size='large'>
