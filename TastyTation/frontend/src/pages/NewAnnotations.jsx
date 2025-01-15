@@ -10,6 +10,7 @@ import AnnotatedImage from './bbox components/AnnotatedImage'
 function NewAnnotations() {
     const [annotations, setAnnotations] = useState([])
     const [annotationStatus, setAnnotationStatus] = useState('LOADING')
+    const [downloading, setDownloading] = useState(false)
     const [newAnnotationClasses, setNewAnnotationClasses] = useState([])
     const [currentIndex, setCurrentIndex] = useState(-1)
     const [error, setError] = useState('')
@@ -154,9 +155,33 @@ function NewAnnotations() {
             })
     }
 
+    function downloadCroppedItems() {
+        setDownloading(true)
+        fetch('/api/download-cropped-items')
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Failed to download cropped items')
+                }
+                return response.blob()
+            })
+            .then((blob) => {
+                const url = window.URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = 'cropped_items.zip'
+                a.click()
+                window.URL.revokeObjectURL(url)
+                setDownloading(false)
+            })
+            .catch((error) => {
+                setError(error.message)
+                setDownloading(false)
+            })
+    }
+
     return (
         <>
-            <ErrorInfoSnackbar error={error} setError={setError} info={false} infoMessage='' />
+            <ErrorInfoSnackbar error={error} setError={setError} info={downloading} infoMessage={<>Downloading Cropped Items...<br />Please Do Not Close This Page</>} />
 
             {/* List of images */}
             <Box sx={{ p: 4, pt: 2 }}>
@@ -169,7 +194,8 @@ function NewAnnotations() {
                         <Typography variant='body1'>Status: {annotationStatus}</Typography>
                     </Box>
                     {annotationStatus === 'DONE' && (
-                        <Box>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <Button variant='contained' onClick={downloadCroppedItems}>Download Cropped Items</Button>
                             <Button variant='contained' onClick={addAnnotation}>Add Annotations</Button>
                         </Box>
                     )}

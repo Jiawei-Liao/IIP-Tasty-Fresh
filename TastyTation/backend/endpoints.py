@@ -7,6 +7,7 @@ import os
 from general_model_annotator.general_model_annotator import save_uploaded_images
 from general_model_annotator.get_annotations import get_general_annotations
 from general_model_annotator.add_annotations import add_annotations
+from general_model_annotator.download_cropped_items import download_cropped_items
 
 from dataset_verifier.dataset_verifier import verify_dataset
 from dataset_verifier.get_inconsistent_annotations import get_inconsistent_annotations
@@ -134,6 +135,20 @@ def get_annotations_route():
 def add_annotations_route():
     add_annotations(send_annotation_status_route)
     return jsonify({'message': 'Annotations added successfully!'}), 200
+
+# Download cropped items in annotations
+@app.route('/api/download-cropped-items', methods=['GET'])
+def download_cropped_items_route():
+    try:
+        zip_buffer = download_cropped_items()
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='cropped_images.zip'
+        )
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
 
 ''' Endpoints for verify annotations page '''
 # Global verification status
