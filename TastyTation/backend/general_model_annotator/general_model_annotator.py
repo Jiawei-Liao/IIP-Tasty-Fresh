@@ -62,7 +62,7 @@ def annotate_images(upload_type, class_name, send_annotation_status):
     # Setup model and variables
     global NEW_CLASS_ID, UPLOAD_TYPE, CLASS_NAME, MODEL, YAML_CONTENT, NC, NEW_CLASS
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model_path = os.path.join(CUR_DIR, 'general_model.pt')
+    model_path = os.path.join(CUR_DIR, '..', 'detection_model', 'models', 'general_model.pt') if os.path.join(CUR_DIR, '..', 'detection_model', 'models', 'general_model.pt') else 'yolo11m.pt'
     MODEL = YOLO(model_path).to(device)
     UPLOAD_TYPE = upload_type
     CLASS_NAME = class_name
@@ -150,7 +150,7 @@ def annotate(is_tier1, rembg_session, tier):
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]
                     cropped_image.save(os.path.join(REMBG_CROPPED_IMG_DIR, f'{timestamp}.png'))
 
-                if len(annotations) > 0:
+                if len(annotations) > 0 or True:
                     # Save to dataset name
                     base_name = os.path.splitext(os.path.basename(img_file))[0]
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')[:-3]
