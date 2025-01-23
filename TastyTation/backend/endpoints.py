@@ -34,7 +34,7 @@ socketio = SocketIO(app, cors_allowed_origins='http://localhost:3000')
 
 ''' Endpoints for editing annotations components '''
 # Fetch image based on the path
-@app.route('/images/<path:full_path>')
+@app.route('/api/images/<path:full_path>')
 def get_image_route(full_path):
     path, filename = os.path.split(full_path)
     return send_from_directory(path, filename)

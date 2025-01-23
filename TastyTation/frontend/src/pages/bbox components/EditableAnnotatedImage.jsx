@@ -185,7 +185,7 @@ export default function EditableAnnotatedImage({ item, onAnnotationsChange, anno
             {/* Image */}
             <img
                 ref={imageRef}
-                src={item.image_path}
+                src={`/api${item.image_path}`}
                 alt={item.filename}
                 onLoad={handleImageLoad}
                 onError={handleImageLoad}
