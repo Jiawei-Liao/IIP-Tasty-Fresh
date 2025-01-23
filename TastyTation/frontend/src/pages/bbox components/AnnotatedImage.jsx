@@ -25,7 +25,7 @@ export default function AnnotatedImage({ item, annotationClasses, highlight }) {
             {/* Image */}
             <img 
                 ref={imageRef} 
-                src={item.image_path} 
+                src={`/api${item.image_path}`}
                 alt={item.filename} 
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
             />
