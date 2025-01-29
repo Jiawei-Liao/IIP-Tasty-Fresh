@@ -36,3 +36,4 @@ def train_detection_model_thread(send_training_status_route):
     model.add_callback('on_train_epoch_end', status_callback)
     model.train(data=os.path.join(CUR_DIR, '..', 'dataset', 'data.yaml'), epochs=30, imgsz=640, project=os.path.join(CUR_DIR, 'training'), name=model_name)
     model.save(os.path.join(CUR_DIR, 'models', f'{model_name}.pt'))
+    model.save(os.path.join(CUR_DIR, 'models', 'general_model.pt'))
