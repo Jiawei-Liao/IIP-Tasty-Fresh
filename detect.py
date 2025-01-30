@@ -9,15 +9,22 @@ import pandas as pd
 import cv2
 from typing import Tuple, Dict
 import argparse
+import torch
 
 # os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 # Load models
+dummy_image = torch.zeros((1, 3, 640, 640)).to('cuda')
+
 general_model_path = 'general_model.pt'
 general_model = YOLO(general_model_path)
+general_model.to('cuda')
+general_model(dummy_image)
 
 sandwich_model_path = 'sandwich_classifier.pt'
 sandwich_model = YOLO(sandwich_model_path)
+sandwich_model.to('cuda')
+sandwich_model(dummy_image)
 
 # Load lookup table
 product_list = pd.read_excel('product_list.xlsx')
@@ -56,7 +63,7 @@ def process_data_matrix(data_matrix_image: Image.Image) -> str:
     '''
 
     # decode the data matrix
-    result = decode(data_matrix_image)
+    result = decode(data_matrix_image, max_count=1, threshold=50, min_edge=20, max_edge=60)
     return str(result[0]).split('\'') if result else None
 
 def user_input(image: Image.Image) -> str:
@@ -179,8 +186,8 @@ def process_image(image: Image.Image) -> Dict:
                 item[0]['sandwich_confidence'] = sandwich_confidence
         
         # Run the data matrix detector
-        data_matrix_result = process_data_matrix(item_image)
-        item[0]['data_matrix'] = data_matrix_result
+        # data_matrix_result = process_data_matrix(item_image)
+        # item[0]['data_matrix'] = data_matrix_result
 
         items.append(item)
 
@@ -215,7 +222,7 @@ def main():
 
     # Live input
     if useCamera:
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
         if not cap.isOpened():
             print('Error: Could not open camera.')
             return
@@ -230,6 +237,16 @@ def main():
                     break
 
                 image = frame
+
+                results = general_model(frame)
+
+                for detection in results[0].boxes.data:
+                    x1, y1, x2, y2, confidence, class_id = detection.tolist()
+                    item_name = results[0].names[int(class_id)]
+
+                    cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+                    cv2.putText(frame, f'{item_name}: {confidence:.2f}', (int(x1), int(y1) - 10), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
                 cv2.imshow('frame', frame)
 
