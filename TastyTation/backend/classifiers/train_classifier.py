@@ -9,6 +9,7 @@ def train_classifier(classifier_name, send_classifier_training_status_route):
     threading.Thread(target=train_classifier_thread, args=(classifier_name, send_classifier_training_status_route)).start()
 
 def train_classifier_thread(classifier_name, send_classifier_training_status_route):
+    send_classifier_training_status_route(classifier_name, 'Training Started')
     def status_callback(trainer):
         epoch = trainer.epoch + 1
         epochs = trainer.epochs
@@ -30,3 +31,4 @@ def train_classifier_thread(classifier_name, send_classifier_training_status_rou
     model.add_callback('on_train_epoch_end', status_callback)
     model.train(data=os.path.join(CUR_DIR, classifier_name, 'dataset'), epochs=30, imgsz=640, project=os.path.join(CUR_DIR, classifier_name, 'models'), name=datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     model.save(os.path.join(CUR_DIR, classifier_name, 'models', f'{classifier_name}.pt'))
+    send_classifier_training_status_route(classifier_name, 'Training Completed')
