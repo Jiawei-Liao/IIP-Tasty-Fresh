@@ -151,6 +151,9 @@ export default function Verify() {
                 if (!response.ok) {
                     throw new Error('Failed to resolve inconsistencies')
                 } else {
+                    if (currentIndex >= annotations.length - 1) {
+                        setCurrentIndex(currentIndex - 1)
+                    }
                     const updatedAnnotations = annotations.filter((item) => item.image_path !== imagePath)
                     setAnnotations(updatedAnnotations)
                 }
@@ -194,6 +197,26 @@ export default function Verify() {
                     })
     
                     setAnnotations(updatedAnnotations)
+                }
+            })
+            .catch((error) => {
+                setError(error.message)
+            })
+    }
+
+    function onDeleteImage(imagePath) {
+        const formData = new FormData()
+        formData.append('imagePath', imagePath)
+
+        fetch('/api/delete-image', {
+            method: 'POST',
+            body: formData
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete image')
+                } else {
+                    resolveInconsistencies(imagePath)
                 }
             })
             .catch((error) => {
@@ -249,6 +272,7 @@ export default function Verify() {
                     onAnnotationsChange={onAnnotationsChange}
                     resolveInconsistencies={resolveInconsistencies}
                     updateRemoveLabel={updateRemoveLabel}
+                    onDeleteImage={onDeleteImage}
                 />
             )}
         </>

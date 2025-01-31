@@ -22,13 +22,6 @@ def add_annotations(send_annotation_status):
         shutil.move(image_file, image_path)
         shutil.move(os.path.join(ANNOTATIONS_DIR, 'labels', filename + '.txt'), label_path)
 
-    # Replace general_model.pt
-    source_model_path = os.path.join(CUR_DIR, 'general_model.pt')
-    target_model_path = os.path.join(CUR_DIR, 'tmp_general_model.pt')
-    if os.path.exists(source_model_path):
-        os.remove(source_model_path)
-    shutil.move(target_model_path, source_model_path)
-
     # Cleanup
     shutil.rmtree(ANNOTATIONS_DIR)
 

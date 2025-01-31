@@ -7,6 +7,7 @@ import os
 from general_model_annotator.general_model_annotator import save_uploaded_images
 from general_model_annotator.get_annotations import get_general_annotations
 from general_model_annotator.add_annotations import add_annotations
+from general_model_annotator.download_cropped_items import download_cropped_items
 
 from dataset_verifier.dataset_verifier import verify_dataset
 from dataset_verifier.get_inconsistent_annotations import get_inconsistent_annotations
@@ -19,6 +20,9 @@ from classifiers.get_classifiers import get_classifiers
 from classifiers.add_images import add_images
 from classifiers.get_classifier import get_classifier
 from classifiers.train_classifier import train_classifier
+from classifiers.view_classifier_classes import view_classifier_classes
+from classifiers.delete_class import delete_class
+from classifiers.rename_class import rename_class
 
 from detection_model.get_detection_models import get_detection_models
 from detection_model.get_detection_model import get_detection_model
@@ -30,7 +34,7 @@ socketio = SocketIO(app, cors_allowed_origins='http://localhost:3000')
 
 ''' Endpoints for editing annotations components '''
 # Fetch image based on the path
-@app.route('/images/<path:full_path>')
+@app.route('/api/images/<path:full_path>')
 def get_image_route(full_path):
     path, filename = os.path.split(full_path)
     return send_from_directory(path, filename)
@@ -57,6 +61,24 @@ def edit_labels_route():
                 f.write(annotation)
 
         return jsonify({'message': 'Labels updated successfully!'}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+@app.route('/api/delete-image', methods=['POST'])
+def delete_image_route():
+    try:
+        image_path = request.form.get('imagePath')
+        image_path = image_path.replace('/images/', '', 1)
+        label_path = image_path.replace('/images/', '/labels/', 1)
+        root, ext = os.path.splitext(label_path)
+        label_path = root + '.txt'
+        print(image_path)
+        print(label_path)
+
+        os.remove(image_path)
+        os.remove(label_path)
+
+        return jsonify({'message': 'Image deleted successfully!'}), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 
@@ -113,6 +135,20 @@ def get_annotations_route():
 def add_annotations_route():
     add_annotations(send_annotation_status_route)
     return jsonify({'message': 'Annotations added successfully!'}), 200
+
+# Download cropped items in annotations
+@app.route('/api/download-cropped-items', methods=['GET'])
+def download_cropped_items_route():
+    try:
+        zip_buffer = download_cropped_items()
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='cropped_images.zip'
+        )
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
 
 ''' Endpoints for verify annotations page '''
 # Global verification status
@@ -237,6 +273,30 @@ def get_classifier_model_route():
         )
     else:
         return jsonify({'message': 'Classifier model not found!'}), 404
+
+# View classifiers classes
+@app.route('/api/view-classifier-classes', methods=['POST'])
+def view_classifier_classes_route():
+    classifier_name = request.form.get('classifierName')
+    classes = view_classifier_classes(classifier_name)
+    return jsonify({'classes': classes}), 200
+
+@app.route('/api/delete-class', methods=['POST'])
+def delete_class_route():
+    classifier_name = request.form.get('classifierName')
+    class_name = request.form.get('className')
+    delete_class(classifier_name, class_name)
+    classes = view_classifier_classes(classifier_name)
+    return jsonify({'classes': classes}), 200
+
+@app.route('/api/rename-class', methods=['POST'])
+def rename_class_route():
+    classifier_name = request.form.get('classifierName')
+    old_class_name = request.form.get('oldClassName')
+    new_class_name = request.form.get('newClassName')
+    rename_class(classifier_name, old_class_name, new_class_name)
+    classes = view_classifier_classes(classifier_name)
+    return jsonify({'classes': classes}), 200
 
 ''' Endpoints for train page'''
 # Get model to download based on model name

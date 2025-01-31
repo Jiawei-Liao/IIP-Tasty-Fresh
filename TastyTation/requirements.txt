@@ -1,0 +1,6 @@
+Pillow
+PyYAML
+rembg
+Flask
+Flask-SocketIO
+Flask-Cors

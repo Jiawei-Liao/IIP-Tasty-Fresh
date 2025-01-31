@@ -19,6 +19,7 @@ export default function ErrorInfoSnackbar({ error, setError, info, infoMessage})
                 <Snackbar
                     open={info}
                     anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                    autoHideDuration={6000}
                 >
                     <Alert severity='info'>
                         {infoMessage}

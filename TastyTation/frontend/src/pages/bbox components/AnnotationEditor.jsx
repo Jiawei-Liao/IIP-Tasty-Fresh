@@ -12,7 +12,7 @@ import EditableAnnotatedImage from './EditableAnnotatedImage'
  * @param {function} onAnnotationsChange: Callback function to update backend when any annotations changes
  * @returns {JSX.Element} An editable annotated image with navigation functionality
  */
-export default function AnnotationEditor({ annotations, currentIndex, setCurrentIndex, annotationClasses, onAnnotationsChange }) {
+export default function AnnotationEditor({ annotations, currentIndex, setCurrentIndex, annotationClasses, onAnnotationsChange, onDeleteImage }) {
     // Return null if invalid
     if (!annotations.length || currentIndex < 0 || currentIndex >= annotations.length) {
         return null
@@ -32,6 +32,9 @@ export default function AnnotationEditor({ annotations, currentIndex, setCurrent
         <Paper sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', p: 2, flexDirection: 'column', borderRadius: 0 }}>
             {/* Header Section */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, position: 'relative' }}>
+                <Button onClick={() => onDeleteImage(currentImage.image_path)} variant='contained' size='large' sx={{ backgroundColor: 'red', position: 'absolute', left: 16 }}>
+                    Delete
+                </Button>
                 {/* Navigation Section */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 3, position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
                     <Button onClick={() => navigate(-1)} disabled={currentIndex === 0} startIcon={<ArrowBack />} variant='outlined' size='large'>

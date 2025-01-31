@@ -18,8 +18,7 @@ def verify_dataset(send_verification_status_route):
     # Load model
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'Using device: {device}')
-    # TODO: figure out what to do when new data/model has been trained
-    model_path = os.path.join(CUR_DIR, '..', 'general_model_annotator', 'general_model.pt')
+    model_path = os.path.join(CUR_DIR, '..', 'detection_model', 'models', 'general_model.pt') if os.path.join(CUR_DIR, '..', 'detection_model', 'models', 'general_model.pt') else 'yolo11m.pt'
     MODEL = YOLO(model_path).to(device)
 
     # Verify annotations

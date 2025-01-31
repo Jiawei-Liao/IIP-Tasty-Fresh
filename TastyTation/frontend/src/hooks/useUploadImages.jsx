@@ -2,6 +2,12 @@ import { useState, useCallback } from 'react'
 
 const CAPTURE_RATE = 1 // Seconds between frame captures
 
+/**
+ * Helper hook to handle image or video uploads to convert them into image objects
+ * @param {React.Dispatch<String>} setError: Function to set error message
+ * @param {React.Dispatch<Boolean>} setLoading: Function to set loading state
+ * @returns { images, setImages, handleImageUpload }: Images state, function to set images state, function to handle image uploads
+ */
 export function useUploadImages({ setError, setLoading }) {
     const [images, setImages] = useState(new Map())
 
@@ -21,6 +27,7 @@ export function useUploadImages({ setError, setLoading }) {
     }
 
     // Gets uploaded images/videos and adds it to the images state
+    // tier is used in Upload.jsx for auto annotation
     const handleImageUpload = useCallback(async (event, tier=null) => {
         try {
             setLoading(true)

@@ -7,6 +7,7 @@ import UploadImages from '../components/UploadImages'
 import ImagesList from '../components/ImagesList'
 import TrainingStatus from '../components/TrainingStatus'
 import { useUploadImages } from '../../hooks/useUploadImages'
+import ViewClassesModel from './ViewClassesModal'
 
 export default function Classifier({ route }) {
     const [loading, setLoading] = useState(false)
@@ -14,6 +15,7 @@ export default function Classifier({ route }) {
     const [error, setError] = useState('')
     const [className, setClassName] = useState('')
     const { images, setImages, handleImageUpload } = useUploadImages({ setError: setError, setLoading: setLoading })
+    const [classes, setClasses] = useState({})
 
     const handleDeleteImage = useCallback((imageName) => {
         // Removes selected image
@@ -132,12 +134,41 @@ export default function Classifier({ route }) {
             })
     }
 
+    function viewClasses() {
+        const formData = new FormData()
+        formData.append('classifierName', route)
+
+        fetch('/api/view-classifier-classes', {
+            method: 'POST',
+            body: formData
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Failed to view classes')
+                }
+                return response.json()
+            })
+            .then((data) => {
+                if (data && data.classes && Object.keys(data.classes).length > 0) {
+                    setClasses(data.classes)
+                } else {
+                    setError('No classes found')
+                }
+            })
+            .catch((error) => {
+                setError(error.message)
+            })
+    }
+
     return (
         <>
             <ErrorInfoSnackbar error={error} setError={setError} info={training} infoMessage='Training new model...' />
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Typography variant='h4'>{route}</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant='h4'>{route}</Typography>
+                    <Button variant='contained' onClick={viewClasses}>View Classes</Button>
+                </Box>
 
                 <Typography variant='caption' style={{ display: 'flex', justifyContent: 'center', textAlign: 'center' }}>
                     Upload images for a single class, specify its name (new or existing), and add them to the dataset. Repeat this process for every new class you want to create.
@@ -154,6 +185,8 @@ export default function Classifier({ route }) {
                 <TextField label='Class Name' value={className} onChange={(e) => setClassName(e.target.value)} fullWidth /> 
                 <ImagesList images={images} handleDeleteImage={handleDeleteImage} elevation={0} />
             </Box>
+
+            {Object.keys(classes).length > 0 && <ViewClassesModel classes={classes} setClasses={setClasses} classifierName={route} setError={setError} />}
         </>
     )
 }
