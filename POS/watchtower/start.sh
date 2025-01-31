@@ -34,7 +34,7 @@ docker run \
     --restart always \
     -d \
     -e DISPLAY:$DISPLAY \
-    -v /tmp/.X11-unix:/tmp.X11-unix \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v /tmp/argus_socket:/tmp/argus_socket \
     --name tastyfreshpos \
     tastyfreshpos/tastyfreshpos:latest
