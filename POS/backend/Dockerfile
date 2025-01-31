@@ -37,8 +37,15 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip \
 # Remove any explicit OpenCV installation from pip
 RUN python3 -m pip uninstall -y opencv-python opencv-python-headless
 
-# Copy rest of the application
-COPY . .
+# Copy models from least likely to change to most likely to change
+COPY /YOLOmodels/DMbarcode.py /app/YOLOmodels/DMbarcode.py
+
+COPY /YOLOmodels/classifiers /app/YOLOmodels/classifiers
+
+COPY /YOLOmodels/general_model.pt /app/YOLOmodels/general_model.pt
+
+# Copy full pipeline
+COPY FULL_PIPELINE.py /app/FULL_PIPELINE.py
 
 # Used previously with web app
 # EXPOSE 8000

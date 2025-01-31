@@ -52,7 +52,7 @@ docker run \
     -e WATCHTOWER_NO_STARTUP_MESSAGE=true \
     -e WATCHTOWER_CLEANUP=false \
     containrrr/watchtower \
-    --interval 10 \
+    --schedule "0 0 22 * * *" \
     tastyfreshpos
 
 # Start updater Python script

@@ -670,7 +670,7 @@ def detect_frame_difference(prev_frame, curr_frame, threshold=0.1):
     return (1 - ssim_index) > threshold
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture(1, cv2.CAP_V4L)
+    cap = cv2.VideoCapture(0, cv2.CAP_V4L)
 
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3264)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2448)
@@ -691,7 +691,6 @@ if __name__ == "__main__":
         # locations = []
 
         # if time.elapsed > 2 seconds, then we will analyse the list
-        cv2.imshow('Frame', frame)
         if detect_frame_difference(prev_frame, frame):
             location_groups = []
             frames_counted = 0
@@ -708,7 +707,6 @@ if __name__ == "__main__":
                 frame = draw_detections(frame, detections)
                 resized = frame
                 resized = cv2.resize(frame, (1280 ,720 ), interpolation = cv2.INTER_AREA) 
-                cv2.imshow('Frame', resized)
                 cv2.waitKey(1)
                 frames_counted += 1
 
