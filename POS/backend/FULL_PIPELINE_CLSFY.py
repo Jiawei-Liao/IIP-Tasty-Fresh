@@ -22,7 +22,7 @@ DM_Model = YOLO('YOLOmodels/DMbarcode.pt')
 General_Model = YOLO('YOLOmodels/super_general_v2.pt')
 
 # New classifier models
-Super_General_Model = YOLO('YOLOmodels/super_general.pt')
+#Super_General_Model = YOLO('YOLOmodels/super_general.pt')
 BAR_Model = YOLO('YOLOmodels/classifiers/BAR.pt')
 BOTTLE_Model = YOLO('YOLOmodels/classifiers/BOTTLE.pt')
 CAN_Model = YOLO('YOLOmodels/classifiers/CAN.pt')
@@ -264,8 +264,7 @@ def map_bounding_box(
 
 def clamp_bounding_box(
     x1: int, y1: int, x2: int, y2: int, 
-    width: int, height: int
-) -> (int, int, int, int):
+    width: int, height: int):
     """
     Ensure bounding box coordinates stay within image bounds.
     
@@ -732,7 +731,7 @@ if __name__ == "__main__":
                 if not ret:
                     break
                 start = time.time()
-                detections = detect(frame)
+                detections = detect_objects_in_frame(frame)
                 location_groups = track_detections(location_groups, detections)
                 print("Detection Time:", time.time() - start)
                 frame = draw_detections(frame, detections)
