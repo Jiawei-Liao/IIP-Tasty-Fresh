@@ -34,7 +34,7 @@ docker run \
     --restart always \
     -d \
     -e DISPLAY:$DISPLAY \
-    -v /tmp/.X11-unix:/tmp.X11-unix \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v /tmp/argus_socket:/tmp/argus_socket \
     --name tastyfreshpos \
     tastyfreshpos/tastyfreshpos:latest
@@ -52,7 +52,7 @@ docker run \
     -e WATCHTOWER_NO_STARTUP_MESSAGE=true \
     -e WATCHTOWER_CLEANUP=false \
     containrrr/watchtower \
-    --interval 10 \
+    --schedule "0 0 22 * * *" \
     tastyfreshpos
 
 # Start updater Python script

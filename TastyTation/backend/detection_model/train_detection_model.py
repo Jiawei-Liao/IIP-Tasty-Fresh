@@ -9,6 +9,7 @@ def train_detection_model(send_training_status_route):
     threading.Thread(target=train_detection_model_thread, args=(send_training_status_route,)).start()
 
 def train_detection_model_thread(send_training_status_route):
+    send_training_status_route('detection', 'Training Started')
     def status_callback(trainer):
         epoch = trainer.epoch + 1
         epochs = trainer.epochs
@@ -36,3 +37,5 @@ def train_detection_model_thread(send_training_status_route):
     model.add_callback('on_train_epoch_end', status_callback)
     model.train(data=os.path.join(CUR_DIR, '..', 'dataset', 'data.yaml'), epochs=30, imgsz=640, project=os.path.join(CUR_DIR, 'training'), name=model_name)
     model.save(os.path.join(CUR_DIR, 'models', f'{model_name}.pt'))
+    model.save(os.path.join(CUR_DIR, 'models', 'general_model.pt'))
+    send_training_status_route('detection', 'Training Completed')

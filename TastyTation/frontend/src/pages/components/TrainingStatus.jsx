@@ -28,13 +28,15 @@ export default function TrainingStatus({ route, downloadModel, setTraining }) {
         })
 
         function handleSocketData(data) {
-            setTrainingStatus(data.status)
-            setTraining(true)
-
-            if (data.status['Epoch'] === data.status['Total Epochs']) {
+            if (data.status === 'Training Completed') {
                 setTraining(false)
-
                 downloadModel()
+            } else if (data.status === 'Training Started') {
+                setTraining(true)
+                setTrainingStatus(null)
+            } else {
+                setTraining(true)
+                setTrainingStatus(data.status)
             }
         }
 

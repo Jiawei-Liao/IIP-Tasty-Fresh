@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'POS/backend/**'
+      - 'POS/backend/**this_doesnt_work_due_to_docker_image_being_too_large_for_github_workflow'
       - '.github/workflows/pos-actions.yml'
 
 jobs:
