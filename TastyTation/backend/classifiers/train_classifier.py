@@ -29,6 +29,10 @@ def train_classifier_thread(classifier_name, send_classifier_training_status_rou
     
     model = YOLO('yolo11s-cls.pt')
     model.add_callback('on_train_epoch_end', status_callback)
-    model.train(data=os.path.join(CUR_DIR, classifier_name, 'dataset'), epochs=30, imgsz=640, project=os.path.join(CUR_DIR, classifier_name, 'models'), name=datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    augmentation_params = {
+        'degrees': 180,
+        'dropout': 0.1
+    }
+    model.train(data=os.path.join(CUR_DIR, classifier_name, 'dataset'), epochs=30, imgsz=640, project=os.path.join(CUR_DIR, classifier_name, 'models'), name=datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), augment=True, **augmentation_params)
     model.save(os.path.join(CUR_DIR, classifier_name, 'models', f'{classifier_name}.pt'))
     send_classifier_training_status_route(classifier_name, 'Training Completed')

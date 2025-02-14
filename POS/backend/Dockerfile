@@ -38,17 +38,30 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip \
 RUN python3 -m pip uninstall -y opencv-python opencv-python-headless
 
 # Copy models from least likely to change to most likely to change
-COPY /YOLOmodels/DMbarcode.py /app/YOLOmodels/DMbarcode.py
+COPY YOLOmodels/DMbarcode.pt /app/YOLOmodels/DMbarcode.pt
 
-COPY /YOLOmodels/classifiers /app/YOLOmodels/classifiers
+COPY YOLOmodels/classifiers/BAR.pt /app/YOLOmodels/classifiers/BAR.pt
+COPY YOLOmodels/classifiers/BOTTLE.pt /app/YOLOmodels/classifiers/BOTTLE.pt
+COPY YOLOmodels/classifiers/CAN.pt /app/YOLOmodels/classifiers/CAN.pt
+COPY YOLOmodels/classifiers/CHIPS.pt /app/YOLOmodels/classifiers/CHIPS.pt
+COPY YOLOmodels/classifiers/CUP.pt /app/YOLOmodels/classifiers/CUP.pt
+COPY YOLOmodels/classifiers/OTHER.pt /app/YOLOmodels/classifiers/OTHER.pt
+COPY YOLOmodels/classifiers/SANDWICH.pt /app/YOLOmodels/classifiers/SANDWICH.pt
+COPY YOLOmodels/classifiers/SPOONFUL.pt /app/YOLOmodels/classifiers/SPOONFUL.pt
+COPY YOLOmodels/classifiers/TF-BLUE.pt /app/YOLOmodels/classifiers/TF-BLUE.pt
+COPY YOLOmodels/classifiers/TF-BROWN.pt /app/YOLOmodels/classifiers/TF-BROWN.pt
 
-COPY /YOLOmodels/general_model.pt /app/YOLOmodels/general_model.pt
+COPY YOLOmodels/general_model.pt /app/YOLOmodels/general_model.pt
+
+# Copy product list
+COPY product_list.xlsx /app/product_list.xlsx
 
 # Copy full pipeline
 COPY FULL_PIPELINE.py /app/FULL_PIPELINE.py
+COPY process.py /app/process.py
 
 # Used previously with web app
 # EXPOSE 8000
 # CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
-CMD ["python3", "FULL_PIPELINE.py"]
+CMD ["python3", "-u", "process.py"]
